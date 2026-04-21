@@ -1,173 +1,218 @@
 -- Database Creation
-CREATE DATABASE IF NOT EXISTS online_examination_system_db;
+DROP DATABASE IF EXISTS online_examination_system_db;
+CREATE DATABASE online_examination_system_db;
 USE online_examination_system_db;
 
--- Tablee Creation.
--- 1. Users table (main user/participant information)
+-- Tables Creation
 CREATE TABLE users (
     user_id INT PRIMARY KEY AUTO_INCREMENT,
-    user_email VARCHAR(100) UNIQUE NOT NULL,
-    user_password VARCHAR(255) NOT NULL,
-    user_role ENUM('student', 'instructor') NOT NULL,
-    user_first_name VARCHAR(50) NOT NULL,
-    user_last_name VARCHAR(50) NOT NULL,
-    user_date_of_birth DATE NOT NULL,
-    user_last_login DATETIME NULL,
-    user_is_active BOOLEAN NOT NULL DEFAULT 1,
-    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+    first_name VARCHAR(50) NOT NULL,
+    last_name VARCHAR(50) NOT NULL,
+    email VARCHAR(100) UNIQUE NOT NULL,
+    password_hash VARCHAR(255) NOT NULL,
+    role ENUM('student', 'instructor', 'admin') NOT NULL,
+    is_active BOOLEAN NOT NULL DEFAULT TRUE,
+    last_login DATETIME NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 );
 
--- 2. Students table (extends users)
 CREATE TABLE students (
     student_id INT PRIMARY KEY AUTO_INCREMENT,
     user_id INT NOT NULL UNIQUE,
-    student_phone VARCHAR(20) NULL,
-    student_address TEXT NULL,
-    enrollment_date DATE DEFAULT (CURRENT_DATE),
+    phone VARCHAR(20) NULL,
+    address_street VARCHAR(100) NULL,
+    address_city VARCHAR(50) NULL,
+    address_zip VARCHAR(10) NULL,
+    enrollment_date DATE NOT NULL DEFAULT (CURRENT_DATE),
     FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE CASCADE
 );
 
--- 3. Instructors table (extends users)
 CREATE TABLE instructors (
     instructor_id INT PRIMARY KEY AUTO_INCREMENT,
     user_id INT NOT NULL UNIQUE,
-    instructor_department VARCHAR(100) NULL,
-    instructor_office VARCHAR(50) NULL,
-    hire_date DATE DEFAULT (CURRENT_DATE),
+    department VARCHAR(100) NULL,
+    office VARCHAR(50) NULL,
+    hire_date DATE NOT NULL DEFAULT (CURRENT_DATE),
     FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE CASCADE
 );
 
--- 4. Categories table (exam categorization)
-CREATE TABLE categories (
-    category_id INT PRIMARY KEY AUTO_INCREMENT,
-    category_name VARCHAR(100) NOT NULL UNIQUE,
-    category_description TEXT NULL
+CREATE TABLE admins (
+    admin_id INT PRIMARY KEY AUTO_INCREMENT,
+    user_id INT NOT NULL UNIQUE,
+    access_level ENUM('full', 'readonly', 'support') NOT NULL DEFAULT 'full',
+    FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE CASCADE
 );
 
--- 5. Exams table (main activity entity)
+CREATE TABLE courses (
+    course_id INT PRIMARY KEY AUTO_INCREMENT,
+    course_code VARCHAR(20) UNIQUE NOT NULL,
+    course_name VARCHAR(100) NOT NULL,
+    description TEXT NULL,
+    credit_hours INT NOT NULL DEFAULT 3,
+    CONSTRAINT chk_credit_hours CHECK (credit_hours > 0 AND credit_hours <= 6)
+);
+
+CREATE TABLE categories (
+    category_id INT PRIMARY KEY AUTO_INCREMENT,
+    category_name VARCHAR(100) UNIQUE NOT NULL,
+    description TEXT NULL
+);
+
 CREATE TABLE exams (
     exam_id INT PRIMARY KEY AUTO_INCREMENT,
-    exam_title VARCHAR(150) NOT NULL,
-    exam_description TEXT NULL,
+    title VARCHAR(150) NOT NULL,
+    description TEXT NULL,
     duration_minutes INT NOT NULL,
     total_marks INT NOT NULL,
     passing_marks INT NOT NULL,
-    exam_date DATE NOT NULL,
-    start_time TIME NOT NULL,
-    end_time TIME NOT NULL,
+    start_time DATETIME NOT NULL,
+    end_time DATETIME NOT NULL,
+    is_published BOOLEAN NOT NULL DEFAULT FALSE,
+    course_id INT NOT NULL,
     category_id INT NULL,
     instructor_id INT NOT NULL,
-    is_active BOOLEAN NOT NULL DEFAULT 1,
-    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (course_id) REFERENCES courses(course_id) ON DELETE CASCADE,
     FOREIGN KEY (category_id) REFERENCES categories(category_id) ON DELETE SET NULL,
+    FOREIGN KEY (instructor_id) REFERENCES instructors(instructor_id) ON DELETE RESTRICT,
+    CONSTRAINT chk_exam_timing CHECK (end_time > start_time),
+    CONSTRAINT chk_passing_marks CHECK (passing_marks <= total_marks)
+);
+
+CREATE TABLE course_instructors (
+    course_id INT NOT NULL,
+    instructor_id INT NOT NULL,
+    assigned_date DATE NOT NULL DEFAULT (CURRENT_DATE),
+    PRIMARY KEY (course_id, instructor_id),
+    FOREIGN KEY (course_id) REFERENCES courses(course_id) ON DELETE CASCADE,
     FOREIGN KEY (instructor_id) REFERENCES instructors(instructor_id) ON DELETE CASCADE
 );
 
--- 6. Questions table
+CREATE TABLE exam_enrollments (
+    exam_id INT NOT NULL,
+    student_id INT NOT NULL,
+    enrolled_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY (exam_id, student_id),
+    FOREIGN KEY (exam_id) REFERENCES exams(exam_id) ON DELETE CASCADE,
+    FOREIGN KEY (student_id) REFERENCES students(student_id) ON DELETE CASCADE
+);
+
 CREATE TABLE questions (
     question_id INT PRIMARY KEY AUTO_INCREMENT,
     exam_id INT NOT NULL,
     question_text TEXT NOT NULL,
-    question_type ENUM('MCQ', 'Short Answer') NOT NULL,
-    options JSON NULL COMMENT 'Stores options as JSON array for MCQ',
+    question_type ENUM('MCQ', 'SHORT_ANSWER') NOT NULL,
+    options JSON NULL,
     correct_answer TEXT NOT NULL,
     marks INT NOT NULL DEFAULT 1,
-    FOREIGN KEY (exam_id) REFERENCES exams(exam_id) ON DELETE CASCADE
+    question_order INT NOT NULL DEFAULT 1,
+    FOREIGN KEY (exam_id) REFERENCES exams(exam_id) ON DELETE CASCADE,
+    CONSTRAINT chk_marks_positive CHECK (marks > 0)
 );
 
--- 7. Exam results table (transaction/result records)
-CREATE TABLE exam_results (
-    result_id INT PRIMARY KEY AUTO_INCREMENT,
+CREATE TABLE exam_attempts (
+    attempt_id INT PRIMARY KEY AUTO_INCREMENT,
     student_id INT NOT NULL,
     exam_id INT NOT NULL,
-    score DECIMAL(5,2) NOT NULL,
-    percentage DECIMAL(5,2) NOT NULL,
-    is_passed BOOLEAN NOT NULL,
-    submitted_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-    remarks TEXT NULL,
+    start_time DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    end_time DATETIME NULL,
+    score DECIMAL(10,2) NULL,
     FOREIGN KEY (student_id) REFERENCES students(student_id) ON DELETE CASCADE,
     FOREIGN KEY (exam_id) REFERENCES exams(exam_id) ON DELETE CASCADE
 );
 
--- 8. Student answers table (historical records of activities)
 CREATE TABLE student_answers (
     answer_id INT PRIMARY KEY AUTO_INCREMENT,
-    student_id INT NOT NULL,
-    exam_id INT NOT NULL,
+    attempt_id INT NOT NULL,
     question_id INT NOT NULL,
     given_answer TEXT NOT NULL,
-    marks_obtained DECIMAL(5,2) DEFAULT 0,
-    is_correct BOOLEAN NOT NULL DEFAULT FALSE,
-    answered_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (student_id) REFERENCES students(student_id) ON DELETE CASCADE,
-    FOREIGN KEY (exam_id) REFERENCES exams(exam_id) ON DELETE CASCADE,
+    marks_obtained DECIMAL(10,2) NOT NULL DEFAULT 0,
+    FOREIGN KEY (attempt_id) REFERENCES exam_attempts(attempt_id) ON DELETE CASCADE,
     FOREIGN KEY (question_id) REFERENCES questions(question_id) ON DELETE CASCADE,
-    UNIQUE KEY unique_student_exam_question (student_id, exam_id, question_id)
+    UNIQUE KEY unique_attempt_question (attempt_id, question_id)
 );
 
--- Sample Data Inserts
--- Insert Users
-INSERT INTO users (user_email, user_password, user_role, user_first_name, user_last_name, user_date_of_birth, user_last_login) VALUES
-('john.doe@university.com', 'hash_password_123', 'student', 'John', 'Doe', '2000-05-15', NOW()),
-('jane.smith@university.com', 'hash_password_456', 'student', 'Jane', 'Smith', '2001-08-22', NOW()),
-('mike.wilson@university.com', 'hash_password_789', 'instructor', 'Mike', 'Wilson', '1985-03-10', NOW()),
-('sarah.johnson@university.com', 'hash_password_101', 'instructor', 'Sarah', 'Johnson', '1982-11-30', NOW()),
-('alex.brown@university.com', 'hash_password_112', 'student', 'Alex', 'Brown', '1999-12-01', NOW());
+-- Sample Data Insertion
+INSERT INTO users (first_name, last_name, email, password_hash, role) VALUES
+('Ahmed', 'Hassan', 'ahmed.hassan@student.edu', 'hash123', 'student'),
+('Sara', 'Mahmoud', 'sara.mahmoud@student.edu', 'hash456', 'student'),
+('Dr. Khaled', 'Ibrahim', 'khaled.ibrahim@university.edu', 'hash789', 'instructor'),
+('Dr. Mona', 'Sayed', 'mona.sayed@university.edu', 'hashabc', 'instructor'),
+('Admin', 'System', 'admin@examsystem.edu', 'hashdef', 'admin');
 
--- Insert Students
-INSERT INTO students (user_id, student_phone, student_address) VALUES
-(1, '+1234567890', '123 Student St, University City'),
-(2, '+1234567891', '456 College Ave, University City'),
-(5, '+1234567892', '789 Campus Rd, University City');
+INSERT INTO students (user_id, phone, address_street, address_city, address_zip, enrollment_date) VALUES
+(1, '01012345678', '15 Tahrir Street', 'Cairo', '11511', '2025-09-15'),
+(2, '01298765432', '22 Corniche Road', 'Alexandria', '21500', '2025-09-15');
 
--- Insert Instructors
-INSERT INTO instructors (user_id, instructor_department, instructor_office) VALUES
-(3, 'Computer Science', 'CS Building Room 101'),
-(4, 'Mathematics', 'Math Building Room 202');
+INSERT INTO instructors (user_id, department, office, hire_date) VALUES
+(3, 'Computer Science', 'Room 304', '2020-08-01'),
+(4, 'Information Systems', 'Room 215', '2021-08-01');
 
--- Insert Categories
-INSERT INTO categories (category_name, category_description) VALUES
-('Programming', 'Programming languages and software development'),
-('Database', 'Database design and management'),
-('Mathematics', 'Mathematical concepts and problem solving'),
-('Web Development', 'HTML, CSS, JavaScript and web frameworks');
+INSERT INTO admins (user_id, access_level) VALUES
+(5, 'full');
 
--- Insert Exams
-INSERT INTO exams (exam_title, exam_description, duration_minutes, total_marks, passing_marks, exam_date, start_time, end_time, category_id, instructor_id) VALUES
-('Python Programming Basics', 'Basic concepts of Python programming', 60, 100, 40, '2024-12-15', '10:00:00', '11:00:00', 1, 1),
-('SQL Fundamentals', 'Basic SQL queries and database concepts', 90, 100, 50, '2024-12-20', '14:00:00', '15:30:00', 2, 1),
-('Calculus I', 'Limits, derivatives, and integrals', 120, 100, 60, '2024-12-18', '09:00:00', '11:00:00', 3, 2),
-('HTML & CSS Basics', 'Web page structure and styling', 60, 100, 40, '2024-12-22', '11:00:00', '12:00:00', 4, 1);
+INSERT INTO courses (course_code, course_name, description, credit_hours) VALUES
+('CS101', 'Introduction to Programming', 'Basic programming concepts using Python', 4),
+('IS201', 'Database Systems', 'Fundamentals of relational database design and SQL', 4),
+('CS301', 'Data Structures', 'Advanced data structures and algorithms', 3);
 
--- Insert Questions for Exam 1 (Python Programming)
-INSERT INTO questions (exam_id, question_text, question_type, options, correct_answer, marks) VALUES
-(1, 'What is the output of print(2**3)?', 'MCQ', '["5", "6", "8", "9"]', '8', 10),
-(1, 'Which of the following is used for comments in Python?', 'MCQ', '["//", "#", "/* */", "<!-- -->"]', '#', 10),
-(1, 'Explain what a list is in Python.', 'Short Answer', NULL, 'A list is a mutable, ordered collection that can hold elements of different types.', 10);
+INSERT INTO categories (category_name, description) VALUES
+('Midterm', 'Mid-semester examination'),
+('Final', 'End of semester comprehensive examination'),
+('Quiz', 'Short weekly assessment');
 
--- Insert Questions for Exam 2 (SQL Fundamentals)
-INSERT INTO questions (exam_id, question_text, question_type, options, correct_answer, marks) VALUES
-(2, 'Which SQL statement is used to extract data from a database?', 'MCQ', '["GET", "SELECT", "EXTRACT", "OPEN"]', 'SELECT', 10),
-(2, 'What does SQL stand for?', 'MCQ', '["Structured Query Language", "Strong Question Language", "Simple Query Language", "Structured Question Language"]', 'Structured Query Language', 10),
-(2, 'Write a query to find all students with age greater than 18.', 'Short Answer', NULL, 'SELECT * FROM students WHERE age > 18;', 20);
+INSERT INTO course_instructors (course_id, instructor_id, assigned_date) VALUES
+(1, 1, '2025-09-01'),
+(2, 1, '2025-09-01'),
+(2, 2, '2025-09-01'),
+(3, 1, '2025-09-01');
 
--- Insert Exam Results
-INSERT INTO exam_results (student_id, exam_id, score, percentage, is_passed, remarks) VALUES
-(1, 1, 85, 85.00, TRUE, 'Good understanding of Python basics'),
-(1, 2, 92, 92.00, TRUE, 'Excellent SQL knowledge'),
-(2, 1, 65, 65.00, TRUE, 'Satisfactory performance'),
-(2, 3, 45, 45.00, FALSE, 'Needs improvement in calculus'),
-(3, 2, 78, 78.00, TRUE, 'Good work');
+INSERT INTO exams (title, description, duration_minutes, total_marks, passing_marks, start_time, end_time, is_published, course_id, category_id, instructor_id) VALUES
+('CS101 Midterm Exam', 'Covers variables, loops, and functions', 90, 100, 60, '2026-04-25 09:00:00', '2026-04-25 10:30:00', TRUE, 1, 1, 1),
+('IS201 Database Design Exam', 'ERD diagrams, normalization, and SQL queries', 120, 100, 70, '2026-04-28 11:00:00', '2026-04-28 13:00:00', TRUE, 2, 1, 1),
+('CS101 Final Exam', 'Comprehensive Python programming', 180, 150, 90, '2026-05-20 09:00:00', '2026-05-20 12:00:00', FALSE, 1, 2, 1),
+('IS201 SQL Quiz', 'Basic SQL SELECT statements', 30, 50, 30, '2026-04-22 14:00:00', '2026-04-22 14:30:00', TRUE, 2, 3, 2);
 
--- Insert Student Answers
-INSERT INTO student_answers (student_id, exam_id, question_id, given_answer, marks_obtained, is_correct) VALUES
-(1, 1, 1, '8', 10, TRUE),
-(1, 1, 2, '#', 10, TRUE),
-(1, 1, 3, 'A list is a collection that can store multiple items in order.', 8, TRUE),
-(2, 1, 1, '6', 0, FALSE),
-(2, 1, 2, '#', 10, TRUE),
-(2, 1, 3, 'A list stores multiple values.', 6, TRUE),
-(1, 2, 4, 'SELECT', 10, TRUE),
-(1, 2, 5, 'Structured Query Language', 10, TRUE),
-(1, 2, 6, 'SELECT * FROM students WHERE age > 18;', 20, TRUE);
+INSERT INTO exam_enrollments (exam_id, student_id, enrolled_at) VALUES
+(1, 1, '2026-04-20 08:00:00'),
+(1, 2, '2026-04-20 08:15:00'),
+(2, 1, '2026-04-21 09:00:00'),
+(2, 2, '2026-04-21 09:30:00'),
+(4, 1, '2026-04-21 13:00:00'),
+(4, 2, '2026-04-21 13:10:00');
+
+INSERT INTO questions (exam_id, question_text, question_type, options, correct_answer, marks, question_order) VALUES
+(1, 'What is the output of: print(2 ** 3)?', 'MCQ', '["6", "8", "9", "5"]', '8', 10, 1),
+(1, 'Which keyword is used to define a function in Python?', 'MCQ', '["func", "define", "def", "function"]', 'def', 10, 2),
+(1, 'Explain the difference between a list and a tuple in Python.', 'SHORT_ANSWER', NULL, 'Lists are mutable, tuples are immutable', 15, 3),
+(1, 'What does the len() function return?', 'MCQ', '["Memory size", "Number of elements", "Data type", "None"]', 'Number of elements', 5, 4),
+(2, 'Which normal form eliminates transitive dependency?', 'MCQ', '["1NF", "2NF", "3NF", "BCNF"]', '3NF', 10, 1),
+(2, 'Write a SQL query to select all students with age > 20.', 'SHORT_ANSWER', NULL, 'SELECT * FROM students WHERE age > 20;', 15, 2),
+(2, 'What does ACID stand for in database transactions?', 'SHORT_ANSWER', NULL, 'Atomicity, Consistency, Isolation, Durability', 10, 3),
+(4, 'Which SQL statement is used to retrieve data?', 'MCQ', '["INSERT", "UPDATE", "SELECT", "DELETE"]', 'SELECT', 5, 1),
+(4, 'What is a primary key?', 'SHORT_ANSWER', NULL, 'A unique identifier for each row in a table', 10, 2);
+
+INSERT INTO exam_attempts (student_id, exam_id, start_time, end_time, score) VALUES
+(1, 1, '2026-04-25 09:00:00', '2026-04-25 10:15:00', 85.00),
+(2, 1, '2026-04-25 09:05:00', '2026-04-25 10:20:00', 72.00),
+(1, 2, '2026-04-28 11:00:00', '2026-04-28 12:45:00', 88.00),
+(1, 4, '2026-04-22 14:00:00', '2026-04-22 14:22:00', 45.00),
+(2, 4, '2026-04-22 14:05:00', '2026-04-22 14:28:00', 40.00);
+
+INSERT INTO student_answers (attempt_id, question_id, given_answer, marks_obtained) VALUES
+(1, 1, '8', 10),
+(1, 2, 'def', 10),
+(1, 3, 'Lists can be modified, tuples cannot be changed', 12),
+(1, 4, 'Number of elements', 5),
+(2, 1, '9', 0),
+(2, 2, 'def', 10),
+(2, 3, 'One is changeable, other is not', 10),
+(2, 4, 'Number of elements', 5),
+(3, 5, '3NF', 10),
+(3, 6, 'SELECT * FROM students WHERE age > 20;', 15),
+(3, 7, 'Atomicity, Consistency, Isolation, Durability', 10),
+(4, 8, 'SELECT', 5),
+(4, 9, 'Unique identifier for table records', 8),
+(5, 8, 'SELECT', 5),
+(5, 9, 'Key that identifies a row', 7);
