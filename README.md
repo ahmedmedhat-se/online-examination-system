@@ -47,9 +47,14 @@ client/
 database/
 ├── online-examination-system_erd.mwb
 ├── online-examination-system_erd.pdf
-├── online-examination-system-erd.svg
+├── online-examination-system-erd.png
+├── online-examination-system-erd.drawio.png
 └── schema.sql
 ```
+
+<div align="center">
+  <img src="./public/online-examination-system.drawio.png" alt="Online Examination System ERD" width="600" />
+</div>
 
 ### Backend (Express.js)
 ```js

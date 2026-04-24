@@ -1,9 +1,7 @@
--- Database Creation
 DROP DATABASE IF EXISTS online_examination_system_db;
 CREATE DATABASE online_examination_system_db;
 USE online_examination_system_db;
 
--- Tables Creation
 CREATE TABLE users (
     user_id INT PRIMARY KEY AUTO_INCREMENT,
     first_name VARCHAR(50) NOT NULL,
@@ -133,7 +131,6 @@ CREATE TABLE student_answers (
     UNIQUE KEY unique_attempt_question (attempt_id, question_id)
 );
 
--- Sample Data Insertion
 INSERT INTO users (first_name, last_name, email, password_hash, role) VALUES
 ('Ahmed', 'Hassan', 'ahmed.hassan@student.edu', 'hash123', 'student'),
 ('Sara', 'Mahmoud', 'sara.mahmoud@student.edu', 'hash456', 'student'),
