@@ -53,7 +53,7 @@ database/
 ```
 
 <div align="center">
-  <img src="./public/online-examination-system.drawio.png" alt="Online Examination System ERD" width="600" />
+  <img src="./public/online-examination-system.drawio.png" alt="Online Examination System ERD" width="800" />
 </div>
 
 ### Backend (Express.js)
