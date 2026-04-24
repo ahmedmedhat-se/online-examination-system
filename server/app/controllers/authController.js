@@ -6,9 +6,9 @@ import { setAuthCookies } from "../../utils/cookieHelper.js";
 export const authController = {
     register: async (req, res) => {
         try {
-            const { user_email, user_password, user_first_name, user_last_name, user_date_of_birth, user_role } = req.body;
+            const { email, password, first_name, last_name, role } = req.body;
 
-            const existingUser = await User.readUserByEmail(user_email);
+            const existingUser = await User.readUserByEmail(email);
             if (existingUser) {
                 return res.status(409).json({
                     message: "User with this email already exists",
@@ -16,26 +16,25 @@ export const authController = {
                 });
             }
 
-            const hashedPassword = await bcrypt.hash(user_password, 12);
+            const hashedPassword = await bcrypt.hash(password, 12);
 
             const userId = await User.create({
-                user_email,
-                user_password: hashedPassword,
-                user_first_name,
-                user_last_name,
-                user_date_of_birth,
-                user_role: user_role || "user"
+                email,
+                password_hash: hashedPassword,
+                first_name,
+                last_name,
+                role: "student"
             });
 
             const user = await User.readUserById(userId);
 
-            const { accessToken, refreshToken } = generateTokens({ user_id: user.user_id, user_role: user.user_role });
+            const { accessToken, refreshToken } = generateTokens({ user_id: user.user_id, user_role: user.role });
 
             setAuthCookies(res, accessToken, refreshToken);
 
             await User.updateLastLogin(user.user_id);
 
-            const { user_password: _, ...userWithoutPassword } = user;
+            const { password_hash: _, ...userWithoutPassword } = user;
 
             return res.status(201).json({
                 message: "User registered successfully",
@@ -53,9 +52,9 @@ export const authController = {
 
     login: async (req, res) => {
         try {
-            const { user_email, user_password } = req.body;
+            const { email, password } = req.body;
 
-            const user = await User.readUserByEmail(user_email);
+            const user = await User.readUserByEmail(email);
             if (!user) {
                 return res.status(401).json({
                     message: "Invalid email or password",
@@ -63,14 +62,14 @@ export const authController = {
                 });
             }
 
-            if (!user.user_is_active) {
+            if (!user.is_active) {
                 return res.status(403).json({
                     message: "Account is deactivated",
                     success: false
                 });
             }
 
-            const isPasswordValid = await bcrypt.compare(user_password, user.user_password);
+            const isPasswordValid = await bcrypt.compare(password, user.password_hash);
             if (!isPasswordValid) {
                 return res.status(401).json({
                     message: "Invalid email or password",
@@ -78,13 +77,13 @@ export const authController = {
                 });
             }
 
-            const { accessToken, refreshToken } = generateTokens({ user_id: user.user_id, user_role: user.user_role });
+            const { accessToken, refreshToken } = generateTokens({ user_id: user.user_id, user_role: user.role });
 
             setAuthCookies(res, accessToken, refreshToken);
 
             await User.updateLastLogin(user.user_id);
 
-            const { user_password: _, ...userWithoutPassword } = user;
+            const { password_hash: _, ...userWithoutPassword } = user;
 
             return res.status(200).json({
                 message: "Login successful",
@@ -137,7 +136,7 @@ export const authController = {
                 });
             }
 
-            const { user_password: _, ...userWithoutPassword } = user;
+            const { password_hash: _, ...userWithoutPassword } = user;
 
             return res.status(200).json({
                 message: "User fetched successfully",
@@ -155,13 +154,12 @@ export const authController = {
 
     updateProfile: async (req, res) => {
         try {
-            const { user_first_name, user_last_name, user_date_of_birth } = req.body;
+            const { first_name, last_name } = req.body;
             const userId = req.user.user_id;
 
             const updates = {};
-            if (user_first_name) updates.user_first_name = user_first_name;
-            if (user_last_name) updates.user_last_name = user_last_name;
-            if (user_date_of_birth) updates.user_date_of_birth = user_date_of_birth;
+            if (first_name) updates.first_name = first_name;
+            if (last_name) updates.last_name = last_name;
 
             if (Object.keys(updates).length === 0) {
                 return res.status(400).json({
@@ -179,7 +177,7 @@ export const authController = {
             }
 
             const updatedUser = await User.readUserById(userId);
-            const { user_password: _, ...userWithoutPassword } = updatedUser;
+            const { password_hash: _, ...userWithoutPassword } = updatedUser;
 
             return res.status(200).json({
                 message: "Profile updated successfully",
@@ -208,8 +206,8 @@ export const authController = {
                 });
             }
 
-            const fullUser = await User.readUserByEmail(user.user_email);
-            const isPasswordValid = await bcrypt.compare(current_password, fullUser.user_password);
+            const fullUser = await User.readUserByEmail(user.email);
+            const isPasswordValid = await bcrypt.compare(current_password, fullUser.password_hash);
             if (!isPasswordValid) {
                 return res.status(401).json({
                     message: "Current password is incorrect",
@@ -218,7 +216,7 @@ export const authController = {
             }
 
             const hashedPassword = await bcrypt.hash(new_password, 12);
-            await User.update(userId, { user_password: hashedPassword });
+            await User.update(userId, { password_hash: hashedPassword });
 
             return res.status(200).json({
                 message: "Password changed successfully",

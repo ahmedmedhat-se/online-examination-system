@@ -5,17 +5,16 @@ export const User = {
         try {
             const stmt = `
                 INSERT INTO users 
-                (user_email, user_password, user_role, user_first_name, user_last_name, user_date_of_birth) 
-                VALUES (?, ?, ?, ?, ?, ?)
+                (email, password_hash, role, first_name, last_name) 
+                VALUES (?, ?, ?, ?, ?)
             `;
 
             const values = [
-                user.user_email,
-                user.user_password,
-                user.user_role || "user",
-                user.user_first_name,
-                user.user_last_name,
-                user.user_date_of_birth
+                user.email,
+                user.password_hash,
+                user.role || "student",
+                user.first_name,
+                user.last_name
             ];
 
             const [result] = await db_config.query(stmt, values);
@@ -23,13 +22,13 @@ export const User = {
         } catch (error) {
             console.error(`User Creation Error: ${error}`);
             throw new Error(`Error Occurred While Creating User: ${error}`);
-        };
+        }
     },
 
     readUserById: async (user_id) => {
         try {
-            const stmt = `SELECT user_id, user_email, user_role, user_first_name, 
-                user_last_name, user_date_of_birth, user_last_login, user_is_active, created_at, 
+            const stmt = `SELECT user_id, email, role, first_name, 
+                last_name, last_login, is_active, created_at, 
                 updated_at 
                 FROM users WHERE user_id = ?`;
             const [user] = await db_config.query(stmt, [user_id]);
@@ -37,36 +36,36 @@ export const User = {
         } catch (error) {
             console.error(`Failed To Fetch User Via ID: ${error}`);
             throw new Error(`Error Occurred While Fetching User Via ID: ${error}`);
-        };
+        }
     },
 
-    readUserByEmail: async (user_email) => {
+    readUserByEmail: async (email) => {
         try {
-            const stmt = `SELECT user_id, user_email, user_password, 
-                user_role, user_first_name, 
-                user_last_name, user_date_of_birth, user_last_login, user_is_active, created_at, 
+            const stmt = `SELECT user_id, email, password_hash, 
+                role, first_name, 
+                last_name, last_login, is_active, created_at, 
                 updated_at 
-            FROM users WHERE user_email = ?`;
-            const [user] = await db_config.query(stmt, [user_email]);
+            FROM users WHERE email = ?`;
+            const [user] = await db_config.query(stmt, [email]);
             return user[0] || null;
         } catch (error) {
             console.error(`Failed To Fetch User Via Email: ${error}`);
             throw new Error(`Error Occurred While Fetching User Via Email: ${error}`);
-        };
+        }
     },
 
     readAllUsers: async () => {
         try {
-            const stmt = `SELECT user_id, user_email, user_role, user_first_name, 
-                user_last_name, user_date_of_birth, user_last_login, user_is_active, created_at, 
+            const stmt = `SELECT user_id, email, role, first_name, 
+                last_name, last_login, is_active, created_at, 
                 updated_at
-                FROM users WHERE user_is_active = 1`;
+                FROM users WHERE is_active = TRUE`;
             const [users] = await db_config.query(stmt);
             return users;
         } catch (error) {
             console.error(`Failed To Fetch All Users: ${error}`);
             throw new Error(`Error Occurred While Fetching Users: ${error}`);
-        };
+        }
     },
 
     update: async (user_id, updates) => {
@@ -74,39 +73,34 @@ export const User = {
             const fields = [];
             const values = [];
 
-            if (updates.user_email !== undefined) {
-                fields.push("user_email = ?");
-                values.push(updates.user_email);
-            };
+            if (updates.email !== undefined) {
+                fields.push("email = ?");
+                values.push(updates.email);
+            }
 
-            if (updates.user_password !== undefined) {
-                fields.push("user_password = ?");
-                values.push(updates.user_password);
-            };
+            if (updates.password_hash !== undefined) {
+                fields.push("password_hash = ?");
+                values.push(updates.password_hash);
+            }
 
-            if (updates.user_first_name !== undefined) {
-                fields.push("user_first_name = ?");
-                values.push(updates.user_first_name);
-            };
+            if (updates.first_name !== undefined) {
+                fields.push("first_name = ?");
+                values.push(updates.first_name);
+            }
 
-            if (updates.user_last_name !== undefined) {
-                fields.push("user_last_name = ?");
-                values.push(updates.user_last_name);
-            };
+            if (updates.last_name !== undefined) {
+                fields.push("last_name = ?");
+                values.push(updates.last_name);
+            }
 
-            if (updates.user_date_of_birth !== undefined) {
-                fields.push("user_date_of_birth = ?");
-                values.push(updates.user_date_of_birth);
-            };
-
-            if (updates.user_role !== undefined) {
-                fields.push("user_role = ?");
-                values.push(updates.user_role);
-            };
+            if (updates.role !== undefined) {
+                fields.push("role = ?");
+                values.push(updates.role);
+            }
 
             if (fields.length === 0) {
                 throw new Error("No fields to update");
-            };
+            }
 
             fields.push("updated_at = CURRENT_TIMESTAMP");
             values.push(user_id);
@@ -123,7 +117,7 @@ export const User = {
 
     updateLastLogin: async (user_id) => {
         try {
-            const stmt = "UPDATE users SET user_last_login = CURRENT_TIMESTAMP WHERE user_id = ?";
+            const stmt = "UPDATE users SET last_login = CURRENT_TIMESTAMP WHERE user_id = ?";
             const [result] = await db_config.query(stmt, [user_id]);
             return result.affectedRows;
         } catch (error) {
@@ -134,7 +128,7 @@ export const User = {
 
     softDelete: async (user_id) => {
         try {
-            const stmt = "UPDATE users SET user_is_active = 0 WHERE user_id = ?";
+            const stmt = "UPDATE users SET is_active = FALSE WHERE user_id = ?";
             const [result] = await db_config.query(stmt, [user_id]);
             return result.affectedRows;
         } catch (error) {
@@ -151,6 +145,6 @@ export const User = {
         } catch (error) {
             console.error(`Hard User Deletion: ${error.message}`);
             throw new Error(`Error Occurred While Deleting User: ${error}`);
-        };
+        }
     }
 };

@@ -1,10 +1,14 @@
-# Online Examination System 
+# SUTech Exam Hub - Online Examination System
 
 > Developed by **Ahmed Medhat**
 
+<div align="center">
+  <img src="./public/sutech-logo.jpg" alt="SUTech Logo" width="300" />
+</div>
+
 ---
 ## Project Overview
-**Online Examination System** is a full-stack web application designed to digitize the exam creation, execution, and evaluation process for educational institutions. It enables instructors to create timed exams with multiple-choice and short-answer questions, while students can take exams remotely and receive instant results.
+**SUTech Exam Hub - Online Examination System** is a full-stack web application designed to digitize the exam creation, execution, and evaluation process for educational institutions. It enables instructors to create timed exams with multiple-choice and short-answer questions, while students can take exams remotely and receive instant results.
 
 **Developed by:** Ahmed Medhat
 **Project Type:** Full‑Stack Web Application
@@ -34,6 +38,15 @@ client/
 ├── public/
 │   └── sutech-logo.jpg
 ├── src/
+│   ├── app/
+│   │   ├── components/
+│   │   ├── layout/
+│   │   └── cstyles/
+│   ├── assets/
+│   │   └── sutech-logo.png
+│   ├── App.jsx
+│   ├── index.css
+│   └── main.jsx
 ├── .gitignore
 ├── eslint.config.js
 ├── index.html
@@ -197,7 +210,11 @@ http://localhost:PORT/api/auth
 © 2026 Ahmed Medhat. All Rights Reserved.
 This project is a personal, non-commercial work created solely for the purpose of demonstrating full-stack web development skills.
 
-*This software and associated documentation are proprietary and confidential. No part of this project may be reproduced, distributed, or transmitted in any form without prior written permission from the author.*
+The name **SUTech** is used strictly as a conceptual reference for learning and portfolio demonstration purposes only. This project is not affiliated with, endorsed by, sponsored by, or connected to ElSewedy University of Technology SUTech or any of its subsidiaries.
+
+*All trademarks, service marks, and brand names referenced remain the property of their respective owners*.
+
+This software and associated documentation are proprietary and confidential. No part of this project may be reproduced, distributed, or transmitted in any form without prior written permission from the author.
 
 ---
 ## Author

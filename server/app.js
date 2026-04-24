@@ -28,14 +28,16 @@ app.use(
     })
 );
 app.use(morgan(process.env.NODE_ENV == "production" ? "combined" : "dev"));
-app.use(cors({
-    origin: process.env.CORS_ORIGIN,
-    credentials: process.env.CORS_CREDENTIALS,
+const corsOptions = {
+    origin: process.env.CORS_ORIGIN
+        ? process.env.CORS_ORIGIN.split(",")
+        : "http://localhost:5173",
     credentials: process.env.CORS_CREDENTIALS === "true",
     optionsSuccessStatus: 200,
     exposedHeaders: ["RateLimit-Limit", "RateLimit-Remaining", "RateLimit-Reset"],
     methods: ["GET", "POST", "PUT", "DELETE", "PATCH"],
-}));
+};
+app.use(cors(corsOptions));
 
 // Rate Limiters applied for APIs
 const createLimiter = (windowMs, max, message) => {
@@ -57,7 +59,7 @@ const createLimiter = (windowMs, max, message) => {
 
 const authLimiter = createLimiter(
     15 * 60 * 1000,
-    50,
+    10,
     "Too many authentication requests. Please try again in 15 minutes."
 );
 
@@ -77,7 +79,12 @@ app.get("/health", (req, res) => {
     });
 });
 
-// App Initialization
+// Server/App Initialization
 app.listen(PORT, () => {
-    console.log(`Server is running at: http://localhost:${PORT}`);
+    console.log(`
+- Server is running on: http://localhost:${PORT}
+- Environment: ${process.env.NODE_ENV || "development"}
+- Started: ${new Date().toLocaleString()}
+- Frontend: ${process.env.FRONTEND_URL}
+`);
 });

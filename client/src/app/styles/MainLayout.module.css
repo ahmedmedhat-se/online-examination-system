@@ -1,0 +1,32 @@
+.layout {
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+    background-color: #f0f2f5;
+}
+
+.mainContent {
+    flex: 1;
+    padding: 28px 36px;
+    max-width: 1440px;
+    width: 100%;
+    margin: 0 auto;
+    animation: fadeIn 0.25s ease;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(8px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+@media (max-width: 1024px) {
+    .mainContent {
+        padding: 20px 24px;
+    }
+}
+
+@media (max-width: 640px) {
+    .mainContent {
+        padding: 14px 12px;
+    }
+}
