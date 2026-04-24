@@ -3,7 +3,7 @@
 > Developed by **Ahmed Medhat**
 
 <div align="center">
-  <img src="./public/sutech-logo.jpg" alt="SUTech Logo" width="300" />
+  <img src="./public/sutech-logo.png" alt="SUTech Logo" width="300" />
 </div>
 
 ---
