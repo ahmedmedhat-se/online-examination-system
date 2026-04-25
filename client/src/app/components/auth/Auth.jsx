@@ -3,11 +3,19 @@ import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faEnvelope, faLock, faEye, faEyeSlash, faUser, faSpinner, faCircleCheck, faShieldHalved, faBolt, faTriangleExclamation } from '@fortawesome/free-solid-svg-icons';
 import axios from 'axios';
+import apiClient from '../../../config/axios.js';
 import styles from '../../styles/Auth.module.css';
 import logoImage from '../../../assets/sutech-logo.png';
 
-const CSRF_HEADER = 'X-Requested-With';
-const CSRF_VALUE = 'XMLHttpRequest';
+const INITIAL_FORM = {
+    first_name: '',
+    last_name: '',
+    email: '',
+    password: '',
+    confirm_password: '',
+};
+
+const ENCRYPTION_KEY = 'exam-hub-auth-salt';
 
 function Auth() {
     const navigate = useNavigate();
@@ -19,25 +27,39 @@ function Auth() {
     const [showPassword, setShowPassword] = useState(false);
     const [showConfirmPassword, setShowConfirmPassword] = useState(false);
     const [isSubmitting, setIsSubmitting] = useState(false);
+    const [attemptCount, setAttemptCount] = useState(0);
     const formRef = useRef(null);
     const abortControllerRef = useRef(null);
+    const sessionTokenRef = useRef(null);
 
-    const [form, setForm] = useState({
-        first_name: '',
-        last_name: '',
-        email: '',
-        password: '',
-        confirm_password: '',
-    });
-
+    const [form, setForm] = useState({ ...INITIAL_FORM });
     const [errors, setErrors] = useState({});
     const [touched, setTouched] = useState({});
+
+    useEffect(() => {
+        sessionTokenRef.current = `${Date.now()}-${Math.random().toString(36).slice(2)}-${crypto.randomUUID()}`;
+
+        const storedUser = localStorage.getItem('user');
+        const accessToken = localStorage.getItem('accessToken');
+        if (storedUser && accessToken) {
+            try {
+                const parsed = JSON.parse(storedUser);
+                navigate(`/dashboard/${parsed.role}`, { replace: true });
+            } catch {
+                localStorage.removeItem('user');
+                localStorage.removeItem('accessToken');
+                localStorage.removeItem('refreshToken');
+                navigate('/', { replace: true });
+            }
+        }
+    }, [navigate]);
 
     useEffect(() => {
         return () => {
             if (abortControllerRef.current) {
                 abortControllerRef.current.abort();
             }
+            clearFormData();
         };
     }, []);
 
@@ -47,38 +69,72 @@ function Auth() {
         } else if (modeFromUrl === 'login') {
             setIsRegister(false);
         }
+        setForm({ ...INITIAL_FORM });
+        setErrors({});
+        setTouched({});
+        setServerError('');
+        setShowPassword(false);
+        setShowConfirmPassword(false);
     }, [modeFromUrl]);
 
-    const sanitizeInput = (value) => {
-        return value.replace(/<[^>]*>/g, '').trim();
-    };
+    const clearFormData = useCallback(() => {
+        setForm({ ...INITIAL_FORM });
+        setErrors({});
+        setTouched({});
+        setServerError('');
+        setShowPassword(false);
+        setShowConfirmPassword(false);
+        setIsSubmitting(false);
+        setLoading(false);
+    }, []);
+
+    const sanitizeInput = useCallback((value) => {
+        if (typeof value !== 'string') return '';
+        return value
+            .replace(/<[^>]*>/g, '')
+            .replace(/javascript:/gi, '')
+            .replace(/on\w+=/gi, '')
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;')
+            .replace(/'/g, '&#x27;')
+            .trim();
+    }, []);
 
     const validateField = useCallback((name, value, formData) => {
         switch (name) {
             case 'first_name':
                 if (isRegister && !value.trim()) return 'First name is required';
                 if (value.length > 50) return 'Max 50 characters';
+                if (value.length < 2 && isRegister) return 'Min 2 characters';
                 if (!/^[a-zA-Z\s\-']+$/.test(value.trim())) return 'Only letters allowed';
                 return '';
             case 'last_name':
                 if (isRegister && !value.trim()) return 'Last name is required';
                 if (value.length > 50) return 'Max 50 characters';
+                if (value.length < 2 && isRegister) return 'Min 2 characters';
                 if (!/^[a-zA-Z\s\-']+$/.test(value.trim())) return 'Only letters allowed';
                 return '';
             case 'email':
                 if (!value.trim()) return 'Email is required';
                 if (value.length > 100) return 'Email is too long';
-                if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value)) return 'Invalid email format';
+                if (value.length < 5) return 'Email is too short';
+                if (!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(value)) return 'Invalid email format';
+                if (/[<>]/.test(value)) return 'Invalid characters in email';
                 return '';
             case 'password':
                 if (!value) return 'Password is required';
                 if (isRegister) {
                     if (value.length < 8) return 'At least 8 characters';
                     if (value.length > 128) return 'Password is too long';
+                    if (value.includes(' ')) return 'No spaces allowed';
                     if (!/(?=.*[a-z])/.test(value)) return 'Include at least one lowercase letter';
                     if (!/(?=.*[A-Z])/.test(value)) return 'Include at least one uppercase letter';
                     if (!/(?=.*\d)/.test(value)) return 'Include at least one number';
-                    if (!/(?=.*[@$!%*?&])/.test(value)) return 'Include at least one special character';
+                    if (!/(?=.*[@$!%*?&#])/.test(value)) return 'Include at least one special character';
+                    const commonPasswords = ['password', '12345678', 'qwerty123', 'admin123', 'letmein1', 'welcome1'];
+                    if (commonPasswords.includes(value.toLowerCase())) return 'Password is too common';
                 }
                 return '';
             case 'confirm_password':
@@ -92,8 +148,8 @@ function Auth() {
 
     const handleChange = useCallback((e) => {
         const { name, value } = e.target;
-        const sanitized = name === 'email' ? value.trim() : sanitizeInput(value);
-        
+        const sanitized = name === 'email' ? value.trim().toLowerCase() : sanitizeInput(value);
+
         setForm(prev => {
             const updated = { ...prev, [name]: sanitized };
             if (touched[name]) {
@@ -111,7 +167,7 @@ function Auth() {
             return updated;
         });
         setServerError('');
-    }, [touched, validateField, isRegister]);
+    }, [touched, validateField, isRegister, sanitizeInput]);
 
     const handleBlur = useCallback((e) => {
         const { name, value } = e.target;
@@ -122,22 +178,15 @@ function Auth() {
         }));
     }, [form, validateField]);
 
-    const getAxiosConfig = () => {
-        return {
-            withCredentials: true,
-            headers: {
-                'Content-Type': 'application/json',
-                [CSRF_HEADER]: CSRF_VALUE,
-            },
-            signal: abortControllerRef.current?.signal,
-        };
-    };
-
     const handleSubmit = useCallback(async (e) => {
         e.preventDefault();
-        
+
         if (isSubmitting) return;
-        
+        if (attemptCount >= 5) {
+            setServerError('Too many attempts. Please refresh the page and try again.');
+            return;
+        }
+
         setServerError('');
 
         const fieldsToValidate = isRegister
@@ -158,26 +207,33 @@ function Auth() {
 
         setIsSubmitting(true);
         setLoading(true);
-        
+        setAttemptCount(prev => prev + 1);
+
         abortControllerRef.current = new AbortController();
+
+        const payload = isRegister
+            ? {
+                email: form.email,
+                password: form.password,
+                first_name: form.first_name.trim(),
+                last_name: form.last_name.trim(),
+                role: 'student',
+            }
+            : {
+                email: form.email,
+                password: form.password,
+            };
 
         try {
             const endpoint = isRegister ? '/api/auth/register' : '/api/auth/login';
-            
-            const payload = isRegister
-                ? {
-                    email: form.email,
-                    password: form.password,
-                    first_name: form.first_name.trim(),
-                    last_name: form.last_name.trim(),
-                    role: 'student',
-                }
-                : {
-                    email: form.email,
-                    password: form.password,
-                };
 
-            const response = await axios.post(endpoint, payload, getAxiosConfig());
+            const response = await apiClient.post(endpoint, payload, {
+                signal: abortControllerRef.current?.signal,
+                headers: {
+                    'X-Session-Token': sessionTokenRef.current,
+                    'X-Requested-With': 'XMLHttpRequest',
+                },
+            });
 
             if (response.data.success) {
                 const data = response.data.data || response.data;
@@ -203,9 +259,11 @@ function Auth() {
                     localStorage.setItem('refreshToken', tokens.refresh_token);
                 }
 
+                clearFormData();
                 window.dispatchEvent(new Event('storage'));
 
-                navigate('/dashboard', { replace: true });
+                const role = user?.role || 'student';
+                navigate(`/dashboard/${role}`, { replace: true });
             } else {
                 setServerError(response.data.message || 'Authentication failed.');
             }
@@ -225,7 +283,7 @@ function Auth() {
                         setServerError('An account with this email already exists.');
                         break;
                     case 429:
-                        setServerError('Too many attempts. Please wait and try again.');
+                        setServerError('Too many requests. Please wait and try again.');
                         break;
                     default:
                         setServerError(data?.message || 'Something went wrong. Please try again.');
@@ -242,27 +300,23 @@ function Auth() {
             } else {
                 setServerError('An unexpected error occurred.');
             }
+
+            setForm(prev => ({
+                ...prev,
+                password: '',
+                confirm_password: '',
+            }));
         } finally {
             setLoading(false);
             setIsSubmitting(false);
         }
-    }, [form, isRegister, navigate, validateField, isSubmitting]);
+    }, [form, isRegister, navigate, validateField, isSubmitting, attemptCount, clearFormData]);
 
     const toggleMode = useCallback(() => {
         setIsRegister(prev => !prev);
-        setServerError('');
-        setErrors({});
-        setTouched({});
-        setShowPassword(false);
-        setShowConfirmPassword(false);
-        setForm({
-            first_name: '',
-            last_name: '',
-            email: '',
-            password: '',
-            confirm_password: '',
-        });
-    }, []);
+        clearFormData();
+        setAttemptCount(0);
+    }, [clearFormData]);
 
     const handleKeyDown = useCallback((e) => {
         if (e.key === 'Enter' && e.target.tagName !== 'BUTTON') {
@@ -317,9 +371,10 @@ function Auth() {
                         </div>
                     )}
 
-                    <form ref={formRef} onSubmit={handleSubmit} onKeyDown={handleKeyDown} noValidate autoComplete={isRegister ? 'off' : 'on'}>
-                        <input type="text" name="username" autoComplete="username" style={{ display: 'none' }} tabIndex={-1} aria-hidden="true" />
-                        
+                    <form ref={formRef} onSubmit={handleSubmit} onKeyDown={handleKeyDown} noValidate autoComplete="off">
+                        <input type="text" name="username" autoComplete="off" style={{ display: 'none' }} tabIndex={-1} aria-hidden="true" />
+                        <input type="password" name="fake_password" autoComplete="off" style={{ display: 'none' }} tabIndex={-1} aria-hidden="true" />
+
                         {isRegister && (
                             <div className={styles.row}>
                                 <div className={styles.formGroup}>
@@ -337,9 +392,10 @@ function Auth() {
                                             value={form.first_name}
                                             onChange={handleChange}
                                             onBlur={handleBlur}
-                                            autoComplete="given-name"
+                                            autoComplete="off"
                                             maxLength={50}
                                             disabled={loading}
+                                            spellCheck={false}
                                         />
                                     </div>
                                     {touched.first_name && errors.first_name && (
@@ -361,9 +417,10 @@ function Auth() {
                                             value={form.last_name}
                                             onChange={handleChange}
                                             onBlur={handleBlur}
-                                            autoComplete="family-name"
+                                            autoComplete="off"
                                             maxLength={50}
                                             disabled={loading}
+                                            spellCheck={false}
                                         />
                                     </div>
                                     {touched.last_name && errors.last_name && (
@@ -388,9 +445,10 @@ function Auth() {
                                     value={form.email}
                                     onChange={handleChange}
                                     onBlur={handleBlur}
-                                    autoComplete="email"
+                                    autoComplete="off"
                                     maxLength={100}
                                     disabled={loading}
+                                    spellCheck={false}
                                 />
                             </div>
                             {touched.email && errors.email && (
@@ -413,9 +471,10 @@ function Auth() {
                                     value={form.password}
                                     onChange={handleChange}
                                     onBlur={handleBlur}
-                                    autoComplete={isRegister ? 'new-password' : 'current-password'}
+                                    autoComplete="off"
                                     maxLength={128}
                                     disabled={loading}
+                                    spellCheck={false}
                                 />
                                 <button
                                     type="button"
@@ -448,9 +507,10 @@ function Auth() {
                                         value={form.confirm_password}
                                         onChange={handleChange}
                                         onBlur={handleBlur}
-                                        autoComplete="new-password"
+                                        autoComplete="off"
                                         maxLength={128}
                                         disabled={loading}
+                                        spellCheck={false}
                                     />
                                     <button
                                         type="button"
@@ -468,12 +528,14 @@ function Auth() {
                             </div>
                         )}
 
-                        <button type="submit" className={styles.submitBtn} disabled={loading}>
+                        <button type="submit" className={styles.submitBtn} disabled={loading || attemptCount >= 5}>
                             {loading ? (
                                 <>
                                     <FontAwesomeIcon icon={faSpinner} className={styles.spinner} />
                                     {isRegister ? 'Creating account...' : 'Signing in...'}
                                 </>
+                            ) : attemptCount >= 5 ? (
+                                'Too Many Attempts'
                             ) : (
                                 isRegister ? 'Create Account' : 'Sign In'
                             )}
