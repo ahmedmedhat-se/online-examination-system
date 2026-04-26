@@ -1,11 +1,32 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faUsers, faBookOpen, faFileAlt, faShieldHalved, faArrowRight } from '@fortawesome/free-solid-svg-icons';
+import { faUsers, faBookOpen, faFileAlt, faShieldHalved, faSpinner, faTriangleExclamation } from '@fortawesome/free-solid-svg-icons';
+import apiClient from '../../config/axios.js';
 import styles from '../styles/Dashboard.module.css';
 
 function AdminDashboard() {
     const [user, setUser] = useState(null);
+    const [stats, setStats] = useState(null);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState('');
+    const abortRef = useRef(null);
+
+    const fetchData = useCallback(async () => {
+        setLoading(true);
+        setError('');
+        abortRef.current = new AbortController();
+
+        try {
+            const statsRes = await apiClient.get('/api/admin/stats', { signal: abortRef.current.signal });
+            if (statsRes.data.success) setStats(statsRes.data.data.stats);
+        } catch (err) {
+            if (err.name === 'CanceledError' || err.code === 'ERR_CANCELED') return;
+            setError('Failed to load dashboard data. Please try again.');
+        } finally {
+            setLoading(false);
+        }
+    }, []);
 
     useEffect(() => {
         const stored = localStorage.getItem('user');
@@ -16,9 +37,30 @@ function AdminDashboard() {
                 setUser(null);
             }
         }
-    }, []);
+        fetchData();
+        return () => { if (abortRef.current) abortRef.current.abort(); };
+    }, [fetchData]);
 
     const firstName = user?.first_name || 'Admin';
+
+    if (loading) {
+        return (
+            <div className={styles.loadingState}>
+                <FontAwesomeIcon icon={faSpinner} spin className={styles.loadingIcon} />
+                <span>Loading admin panel...</span>
+            </div>
+        );
+    }
+
+    if (error) {
+        return (
+            <div className={styles.errorState}>
+                <FontAwesomeIcon icon={faTriangleExclamation} className={styles.errorIcon} />
+                <span>{error}</span>
+                <button className={styles.retryBtn} onClick={fetchData}>Retry</button>
+            </div>
+        );
+    }
 
     return (
         <div className={styles.dashboard}>
@@ -33,7 +75,7 @@ function AdminDashboard() {
                         <FontAwesomeIcon icon={faUsers} />
                     </div>
                     <div className={styles.statContent}>
-                        <span className={styles.statValue}>1,248</span>
+                        <span className={styles.statValue}>{stats?.users ?? '—'}</span>
                         <span className={styles.statLabel}>Total Users</span>
                     </div>
                 </div>
@@ -42,7 +84,7 @@ function AdminDashboard() {
                         <FontAwesomeIcon icon={faBookOpen} />
                     </div>
                     <div className={styles.statContent}>
-                        <span className={styles.statValue}>24</span>
+                        <span className={styles.statValue}>{stats?.courses ?? '—'}</span>
                         <span className={styles.statLabel}>Courses</span>
                     </div>
                 </div>
@@ -51,7 +93,7 @@ function AdminDashboard() {
                         <FontAwesomeIcon icon={faFileAlt} />
                     </div>
                     <div className={styles.statContent}>
-                        <span className={styles.statValue}>56</span>
+                        <span className={styles.statValue}>{stats?.exams ?? '—'}</span>
                         <span className={styles.statLabel}>Exams</span>
                     </div>
                 </div>
@@ -60,8 +102,8 @@ function AdminDashboard() {
                         <FontAwesomeIcon icon={faShieldHalved} />
                     </div>
                     <div className={styles.statContent}>
-                        <span className={styles.statValue}>3</span>
-                        <span className={styles.statLabel}>Admins</span>
+                        <span className={styles.statValue}>{stats?.instructors ?? '—'}</span>
+                        <span className={styles.statLabel}>Instructors</span>
                     </div>
                 </div>
             </div>
@@ -75,21 +117,21 @@ function AdminDashboard() {
                         <h3 className={styles.infoCardTitle}>User Management</h3>
                         <p className={styles.infoCardDesc}>Manage students, instructors, and admin accounts.</p>
                         <div className={styles.infoCardMeta}>
-                            <span className={`${styles.badge} ${styles.badgeBlue}`}>1,248 users</span>
+                            <span className={`${styles.badge} ${styles.badgeBlue}`}>{stats?.users ?? '—'} users</span>
                         </div>
                     </Link>
                     <Link to="/courses" className={styles.infoCard} style={{ textDecoration: 'none' }}>
                         <h3 className={styles.infoCardTitle}>Course Management</h3>
                         <p className={styles.infoCardDesc}>Create and manage course catalog.</p>
                         <div className={styles.infoCardMeta}>
-                            <span className={`${styles.badge} ${styles.badgeGreen}`}>24 courses</span>
+                            <span className={`${styles.badge} ${styles.badgeGreen}`}>{stats?.courses ?? '—'} courses</span>
                         </div>
                     </Link>
                     <Link to="/categories" className={styles.infoCard} style={{ textDecoration: 'none' }}>
-                        <h3 className={styles.infoCardTitle}>Categories</h3>
+                        <h3 className={styles.infoCardTitle}>Categories & Exams</h3>
                         <p className={styles.infoCardDesc}>Organize exams with categories and tags.</p>
                         <div className={styles.infoCardMeta}>
-                            <span className={`${styles.badge} ${styles.badgeAmber}`}>8 categories</span>
+                            <span className={`${styles.badge} ${styles.badgeAmber}`}>{stats?.exams ?? '—'} exams</span>
                         </div>
                     </Link>
                 </div>

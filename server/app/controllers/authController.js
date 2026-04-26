@@ -1,5 +1,8 @@
 import bcrypt from "bcrypt";
 import { User } from "../models/User.js";
+import { Student } from "../models/Student.js";
+import { Instructor } from "../models/Instructor.js";
+import { Admin } from "../models/Admin.js";
 import { generateTokens } from "../../utils/jwt.js";
 import { setAuthCookies } from "../../utils/cookieHelper.js";
 
@@ -7,6 +10,7 @@ export const authController = {
     register: async (req, res) => {
         try {
             const { email, password, first_name, last_name, role } = req.body;
+            const userRole = role || "student";
 
             const existingUser = await User.readUserByEmail(email);
             if (existingUser) {
@@ -23,8 +27,16 @@ export const authController = {
                 password_hash: hashedPassword,
                 first_name,
                 last_name,
-                role: "student"
+                role: userRole
             });
+
+            if (userRole === "student") {
+                await Student.create({ user_id: userId });
+            } else if (userRole === "instructor") {
+                await Instructor.create({ user_id: userId });
+            } else if (userRole === "admin") {
+                await Admin.create({ user_id: userId });
+            }
 
             const user = await User.readUserById(userId);
 

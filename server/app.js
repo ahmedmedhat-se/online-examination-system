@@ -1,4 +1,3 @@
-/// Main App Imports
 import express from "express";
 import dotenv from "dotenv";
 import helmet from "helmet";
@@ -6,77 +5,86 @@ import morgan from "morgan";
 import cookieParser from "cookie-parser";
 import cors from "cors";
 import rateLimit from "express-rate-limit";
-
-// API Routes Imports
 import { authRouter } from "./apis/authRoutes.js";
+import { studentRouter } from "./apis/studentRoutes.js";
+import { instructorRouter } from "./apis/instructorRoutes.js";
+import { adminRouter } from "./apis/adminRoutes.js";
 
-// Main App Configs/Vars
 dotenv.config();
-const app = express();
-const PORT = process.env.PORT;
 
-// Global App Middlewares
+// App Error-Ctachers
+process.on("uncaughtException", (err) => {
+  console.error("💥 Uncaught Exception:", err.message);
+  console.error(err.stack);
+});
+
+process.on("unhandledRejection", (reason) => {
+  console.error("💥 Unhandled Rejection:", reason);
+});
+
+const app = express();
+const PORT = process.env.PORT || 8080;
+app.use(cors({
+  origin: "http://localhost:5000",
+  credentials: true,
+  methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
+  allowedHeaders: ["Content-Type", "Authorization", "X-Requested-With"],
+}));
+
+// App Middlewares
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
-app.use(
-    helmet({
-        contentSecurityPolicy: process.env.NODE_ENV === "production" ? undefined : false,
-        crossOriginEmbedderPolicy: false,
-        crossOriginResourcePolicy: { policy: "cross-origin" },
-        referrerPolicy: { policy: "strict-origin-when-cross-origin" },
-    })
-);
-app.use(morgan(process.env.NODE_ENV == "production" ? "combined" : "dev"));
-const corsOptions = {
-    origin: process.env.CORS_ORIGIN
-        ? process.env.CORS_ORIGIN.split(",")
-        : "http://localhost:5173",
-    credentials: process.env.CORS_CREDENTIALS === "true",
-    optionsSuccessStatus: 200,
-    exposedHeaders: ["RateLimit-Limit", "RateLimit-Remaining", "RateLimit-Reset"],
-    methods: ["GET", "POST", "PUT", "DELETE", "PATCH"],
-};
-app.use(cors(corsOptions));
+app.use(helmet({
+  contentSecurityPolicy: false,
+  crossOriginEmbedderPolicy: false,
+  crossOriginResourcePolicy: { policy: "cross-origin" },
+}));
+app.use(morgan("dev"));
 
-// Rate Limiters applied for APIs
-const createLimiter = (windowMs, max, message) => {
-    return rateLimit({
-        windowMs,
-        max,
-        message: {
-            message,
-            success: false
-        },
-        standardHeaders: true,
-        legacyHeaders: false,
-        handler: (req, res, next, options) => {
-            res.status(options.statusCode || 429).json(options.message);
-        },
-        skip: process.env.DISABLE_RATE_LIMIT === 'true' ? () => true : undefined
-    });
-};
+const createLimiter = (windowMs, max, message) =>
+  rateLimit({
+    windowMs,
+    max,
+    message: { message, success: false },
+    standardHeaders: true,
+    legacyHeaders: false,
+    handler: (req, res, next, options) => {
+      res.status(options.statusCode || 429).json(options.message);
+    },
+    skip: process.env.DISABLE_RATE_LIMIT === "true" ? () => true : undefined,
+  });
 
 const authLimiter = createLimiter(
-    15 * 60 * 1000,
-    10,
-    "Too many authentication requests. Please try again in 15 minutes."
+  15 * 60 * 1000,
+  10,
+  "Too many authentication requests. Please try again in 15 minutes."
 );
 
-// System Rate Limiters
+// APIs
 app.use("/api/auth", authLimiter);
-
-// System APIs
 app.use("/api/auth", authRouter);
+app.use("/api/student", studentRouter);
+app.use("/api/instructor", instructorRouter);
+app.use("/api/admin", adminRouter);
 
-// Health Check Endpoint
 app.get("/health", (req, res) => {
-    res.status(200).json({
-        success: true,
-        message: "Server is running",
-        timestamp: new Date().toISOString(),
-        uptime: process.uptime()
-    });
+  res.status(200).json({
+    success: true,
+    message: "Server is running",
+    timestamp: new Date().toISOString(),
+    uptime: process.uptime(),
+  });
+});
+
+// Global Error Handler
+app.use((err, req, res, next) => {
+  console.error("💥 Route Error:", err.message);
+  console.error(err.stack);
+  res.status(err.status || 500).json({
+    success: false,
+    message: err.message || "Internal server error",
+  });
 });
 
 // Server/App Initialization
