@@ -15,6 +15,12 @@ apiClient.interceptors.request.use(
         if (token) {
             config.headers.Authorization = `Bearer ${token}`;
         }
+        
+        const sessionToken = localStorage.getItem('sessionToken');
+        if (sessionToken) {
+            config.headers['x-session-token'] = sessionToken;
+        }
+        
         return config;
     },
     (error) => {
@@ -29,8 +35,13 @@ apiClient.interceptors.response.use(
             localStorage.removeItem('user');
             localStorage.removeItem('accessToken');
             localStorage.removeItem('refreshToken');
+            localStorage.removeItem('sessionToken');
+            
             window.dispatchEvent(new Event('storage'));
-            window.location.href = '/auth?mode=login';
+            
+            if (!window.location.href.includes('/auth')) {
+                window.location.href = '/auth?mode=login';
+            }
         }
         return Promise.reject(error);
     }

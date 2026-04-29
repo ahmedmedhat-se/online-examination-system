@@ -12,7 +12,6 @@ import { adminRouter } from "./apis/adminRoutes.js";
 
 dotenv.config();
 
-// App Error-Ctachers
 process.on("uncaughtException", (err) => {
   console.error("💥 Uncaught Exception:", err.message);
   console.error(err.stack);
@@ -24,14 +23,21 @@ process.on("unhandledRejection", (reason) => {
 
 const app = express();
 const PORT = process.env.PORT || 8080;
+
 app.use(cors({
-  origin: "http://localhost:5000",
+  origin: process.env.FRONTEND_URL || "http://localhost:5173",
   credentials: true,
   methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
-  allowedHeaders: ["Content-Type", "Authorization", "X-Requested-With"],
+  allowedHeaders: [
+    "Content-Type",
+    "Authorization",
+    "X-Requested-With",
+    "X-Session-Token",
+    "x-session-token"
+  ],
+  exposedHeaders: ["X-Session-Token", "x-session-token"]
 }));
 
-// App Middlewares
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
@@ -61,9 +67,7 @@ const authLimiter = createLimiter(
   "Too many authentication requests. Please try again in 15 minutes."
 );
 
-// APIs
-app.use("/api/auth", authLimiter);
-app.use("/api/auth", authRouter);
+app.use("/api/auth", authLimiter, authRouter);
 app.use("/api/student", studentRouter);
 app.use("/api/instructor", instructorRouter);
 app.use("/api/admin", adminRouter);
@@ -77,7 +81,6 @@ app.get("/health", (req, res) => {
   });
 });
 
-// Global Error Handler
 app.use((err, req, res, next) => {
   console.error("💥 Route Error:", err.message);
   console.error(err.stack);
@@ -87,12 +90,11 @@ app.use((err, req, res, next) => {
   });
 });
 
-// Server/App Initialization
 app.listen(PORT, () => {
-    console.log(`
+  console.log(`
 - Server is running on: http://localhost:${PORT}
 - Environment: ${process.env.NODE_ENV || "development"}
 - Started: ${new Date().toLocaleString()}
-- Frontend: ${process.env.FRONTEND_URL}
+- Frontend: ${process.env.FRONTEND_URL || "http://localhost:5173"}
 `);
 });

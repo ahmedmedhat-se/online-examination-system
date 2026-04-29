@@ -14,7 +14,6 @@ export const adminController = {
             return res.status(500).json({ message: error.message, success: false });
         }
     },
-
     getStats: async (req, res) => {
         try {
             const stats = await Admin.readStats();
@@ -23,7 +22,6 @@ export const adminController = {
             return res.status(500).json({ message: error.message, success: false });
         }
     },
-
     getAllStudents: async (req, res) => {
         try {
             const students = await Student.readAll();
@@ -32,7 +30,6 @@ export const adminController = {
             return res.status(500).json({ message: error.message, success: false });
         }
     },
-
     getAllInstructors: async (req, res) => {
         try {
             const instructors = await Instructor.readAll();
@@ -41,7 +38,6 @@ export const adminController = {
             return res.status(500).json({ message: error.message, success: false });
         }
     },
-
     getAllAdmins: async (req, res) => {
         try {
             const admins = await Admin.readAll();
@@ -50,7 +46,6 @@ export const adminController = {
             return res.status(500).json({ message: error.message, success: false });
         }
     },
-
     getAllUsers: async (req, res) => {
         try {
             const users = await User.readAllUsers();

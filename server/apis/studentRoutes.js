@@ -3,11 +3,11 @@ import { authenticate } from "../app/middlewares/authMiddleware.js";
 import { authorize } from "../app/middlewares/roleMiddleware.js";
 import { studentController } from "../app/controllers/studentController.js";
 
-const router = Router();
+const studentRouter = Router();
 
-router.get("/profile", authenticate, authorize("student"), studentController.getProfile);
-router.put("/profile", authenticate, authorize("student"), studentController.updateProfile);
-router.get("/enrollments", authenticate, authorize("student"), studentController.getEnrollments);
-router.get("/attempts", authenticate, authorize("student"), studentController.getAttempts);
+studentRouter.get("/profile", authenticate, authorize("student"), studentController.getProfile);
+studentRouter.put("/profile", authenticate, authorize("student"), studentController.updateProfile);
+studentRouter.get("/enrollments", authenticate, authorize("student"), studentController.getEnrollments);
+studentRouter.get("/attempts", authenticate, authorize("student"), studentController.getAttempts);
 
-export { router as studentRouter };
+export { studentRouter };

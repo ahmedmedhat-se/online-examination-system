@@ -2,16 +2,15 @@ import { verifyAccessToken } from "../../utils/jwt.js";
 
 export const authenticate = (req, res, next) => {
     try {
-        const authHeader = req.headers.authorization;
+        const token = req.cookies?.accessToken || req.headers.authorization?.split(" ")[1];
 
-        if (!authHeader || !authHeader.startsWith("Bearer ")) {
+        if (!token) {
             return res.status(401).json({
                 message: "Unauthorized. No Token Provided.",
                 success: false
             });
         }
 
-        const token = authHeader.split(" ")[1];
         const verification = verifyAccessToken(token);
 
         if (!verification.valid) {
@@ -30,6 +29,7 @@ export const authenticate = (req, res, next) => {
         req.user = verification.decoded;
         next();
     } catch (error) {
+        console.error("Auth middleware error:", error.message);
         return res.status(500).json({
             message: "Internal Server Error.",
             success: false
