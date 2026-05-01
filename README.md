@@ -40,10 +40,32 @@ client/
 ├── src/
 │   ├── app/
 │   │   ├── components/
+│   │   │   ├── auth/
+│   │   │   │   └── Auth.jsx
+│   │   │   ├── Footer.jsx
+│   │   │   ├── Header.jsx
+│   │   │   └── Navbar.jsx
+│   │   ├── guards/
+│   │   │   ├── GuestGuard.jsx
+│   │   │   └── RoleGuard.jsx
+│   │   ├── inerfaces/
+│   │   │   ├── AdminDashboard.jsx
+│   │   │   ├── GuestDashboard.jsx
+│   │   │   ├── InstructorDashboard.jsx
+│   │   │   └── StudentDashboard.jsx
 │   │   ├── layout/
-│   │   └── cstyles/
+│   │   │   └── MainLayout.jsx
+│   │   └── styles/
+│   │       ├── Auth.module.css
+│   │       ├── Dashboard.module.css
+│   │       ├── Footer.module.css
+│   │       ├── Header.module.css
+│   │       ├── MainLayout.module.css
+│   │       └── Navbar.module.css
 │   ├── assets/
 │   │   └── sutech-logo.png
+│   ├── config/
+│   │   └── axios.js
 │   ├── App.jsx
 │   ├── index.css
 │   └── main.jsx
@@ -58,7 +80,8 @@ client/
 ### Database (MySQL)
 ```js
 database/
-├── online-examination-system_erd.mwb
+├── .gitignore
+├── .txt
 ├── online-examination-system_erd.pdf
 ├── online-examination-system-erd.png
 ├── online-examination-system-erd.drawio.png

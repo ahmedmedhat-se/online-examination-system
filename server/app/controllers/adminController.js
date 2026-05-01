@@ -54,5 +54,35 @@ export const adminController = {
         } catch (error) {
             return res.status(500).json({ message: error.message, success: false });
         }
+    },
+    updateUser: async (req, res) => {
+        try {
+            const { id } = req.params;
+            const { is_active, role, first_name, last_name, email } = req.body;
+            const updates = {};
+            if (is_active !== undefined) updates.is_active = is_active;
+            if (role !== undefined) updates.role = role;
+            if (first_name !== undefined) updates.first_name = first_name;
+            if (last_name !== undefined) updates.last_name = last_name;
+            if (email !== undefined) updates.email = email;
+
+            const affected = await User.update(id, updates);
+            if (!affected) return res.status(404).json({ message: "User not found", success: false });
+            const user = await User.readUserById(id);
+            const { password_hash: _, ...safeUser } = user;
+            return res.status(200).json({ message: "User updated", success: true, data: { user: safeUser } });
+        } catch (error) {
+            return res.status(500).json({ message: error.message, success: false });
+        }
+    },
+    deleteUser: async (req, res) => {
+        try {
+            const { id } = req.params;
+            const affected = await User.hardDelete(id);
+            if (!affected) return res.status(404).json({ message: "User not found", success: false });
+            return res.status(200).json({ message: "User deleted", success: true });
+        } catch (error) {
+            return res.status(500).json({ message: error.message, success: false });
+        }
     }
 };

@@ -11,5 +11,7 @@ router.get("/users", authenticate, authorize("admin"), adminController.getAllUse
 router.get("/students", authenticate, authorize("admin"), adminController.getAllStudents);
 router.get("/instructors", authenticate, authorize("admin"), adminController.getAllInstructors);
 router.get("/admins", authenticate, authorize("admin"), adminController.getAllAdmins);
+router.put("/users/:id", authenticate, authorize("admin"), adminController.updateUser);
+router.delete("/users/:id", authenticate, authorize("admin"), adminController.deleteUser);
 
 export { router as adminRouter };

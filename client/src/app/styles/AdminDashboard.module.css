@@ -1,0 +1,377 @@
+.tabs {
+    display: flex;
+    gap: 4px;
+    background: #f1f5f9;
+    padding: 4px;
+    border-radius: 12px;
+    margin-bottom: 24px;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+}
+
+.tab {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 18px;
+    border-radius: 10px;
+    border: none;
+    background: transparent;
+    color: #64748b;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+    white-space: nowrap;
+    font-family: inherit;
+}
+
+.tab:hover {
+    color: #334155;
+    background: rgba(255, 255, 255, 0.5);
+}
+
+.tabActive {
+    background: #ffffff;
+    color: #0f172a;
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.08);
+}
+
+.refreshBtn {
+    background: none;
+    border: none;
+    color: #f59e0b;
+    cursor: pointer;
+    font-weight: 600;
+    font-size: 13px;
+    font-family: inherit;
+    padding: 0;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.refreshBtn:hover {
+    color: #d97706;
+}
+
+.centerState {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: 50vh;
+    color: #94a3b8;
+    gap: 12px;
+    font-size: 15px;
+    font-weight: 500;
+}
+
+.loadingIcon {
+    font-size: 36px;
+    color: #f59e0b;
+}
+
+.toast {
+    background: #fef2f2;
+    color: #dc2626;
+    border: 1px solid #fecaca;
+    border-radius: 10px;
+    padding: 12px 18px;
+    font-size: 13px;
+    font-weight: 500;
+    margin-bottom: 16px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.tableContainer {
+    animation: fadeIn 0.2s ease;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(6px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.tableHeader {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 16px;
+}
+
+.tableWrap {
+    overflow-x: auto;
+    border-radius: 14px;
+    border: 1px solid #e8ecf1;
+    background: #ffffff;
+}
+
+.table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13px;
+}
+
+.table th {
+    text-align: left;
+    padding: 14px 18px;
+    background: #f8fafc;
+    color: #64748b;
+    font-weight: 700;
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    border-bottom: 1px solid #e8ecf1;
+}
+
+.table td {
+    padding: 14px 18px;
+    border-bottom: 1px solid #f1f5f9;
+    color: #334155;
+    font-weight: 500;
+}
+
+.table tr:last-child td {
+    border-bottom: none;
+}
+
+.table tr:hover td {
+    background: #fafbfc;
+}
+
+.badge {
+    display: inline-block;
+    padding: 4px 10px;
+    border-radius: 20px;
+    font-size: 11px;
+    font-weight: 700;
+}
+
+.roleAdmin {
+    background: #faf5ff;
+    color: #a855f7;
+}
+
+.roleInstructor {
+    background: #dbeafe;
+    color: #2563eb;
+}
+
+.roleStudent {
+    background: #f0fdf4;
+    color: #16a34a;
+}
+
+.statusActive {
+    color: #16a34a;
+    font-weight: 600;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.statusActive::before {
+    content: '';
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: #22c55e;
+}
+
+.statusInactive {
+    color: #94a3b8;
+    font-weight: 600;
+}
+
+.actions {
+    display: flex;
+    gap: 6px;
+}
+
+.actionBtn {
+    width: 32px;
+    height: 32px;
+    border-radius: 8px;
+    border: 1px solid #e2e8f0;
+    background: #ffffff;
+    color: #64748b;
+    cursor: pointer;
+    font-size: 13px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.15s;
+}
+
+.actionBtn:hover:not(:disabled) {
+    border-color: #cbd5e0;
+    color: #0f172a;
+}
+
+.actionBtn:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+}
+
+.actionDelete:hover:not(:disabled) {
+    border-color: #fecaca;
+    color: #dc2626;
+    background: #fef2f2;
+}
+
+.emptyRow {
+    text-align: center;
+    color: #94a3b8;
+    padding: 32px !important;
+}
+
+@media (max-width: 640px) {
+    .tabs {
+        gap: 2px;
+        padding: 3px;
+    }
+    .tab {
+        padding: 8px 12px;
+        font-size: 12px;
+    }
+    .tab span {
+        display: none;
+    }
+    .table th,
+    .table td {
+        padding: 10px 12px;
+        font-size: 12px;
+    }
+}
+
+.editRow {
+    display: flex;
+    gap: 6px;
+}
+
+.editInput {
+    padding: 6px 10px;
+    border: 1.5px solid #e2e8f0;
+    border-radius: 8px;
+    font-size: 13px;
+    font-family: inherit;
+    outline: none;
+    width: 100%;
+    min-width: 80px;
+}
+
+.editInput:focus {
+    border-color: #f59e0b;
+    box-shadow: 0 0 0 2px rgba(245, 158, 11, 0.1);
+}
+
+.editSelect {
+    padding: 6px 28px 6px 10px;
+    border: 1.5px solid #e2e8f0;
+    border-radius: 8px;
+    font-size: 13px;
+    font-family: inherit;
+    outline: none;
+    appearance: none;
+    background: #ffffff;
+    cursor: pointer;
+}
+
+.editSelect:focus {
+    border-color: #f59e0b;
+}
+
+.selectWrapper {
+    position: relative;
+    display: inline-block;
+}
+
+.selectIcon {
+    position: absolute;
+    right: 10px;
+    top: 50%;
+    transform: translateY(-50%);
+    font-size: 10px;
+    color: #94a3b8;
+    pointer-events: none;
+}
+
+.editTextarea {
+    width: 100%;
+    padding: 8px 10px;
+    border: 1.5px solid #e2e8f0;
+    border-radius: 8px;
+    font-size: 13px;
+    font-family: inherit;
+    outline: none;
+    resize: vertical;
+    margin-bottom: 10px;
+}
+
+.editTextarea:focus {
+    border-color: #f59e0b;
+}
+
+.addBtn {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 16px;
+    background: #0f172a;
+    color: #ffffff;
+    border: none;
+    border-radius: 10px;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+    font-family: inherit;
+}
+
+.addBtn:hover {
+    background: #1e293b;
+}
+
+.formCard {
+    background: #ffffff;
+    border: 1px solid #e8ecf1;
+    border-radius: 14px;
+    padding: 18px;
+    margin-bottom: 16px;
+}
+
+.formRow {
+    display: grid;
+    grid-template-columns: 1fr 1fr 120px;
+    gap: 10px;
+    margin-bottom: 10px;
+}
+
+.submitBtn {
+    padding: 10px 20px;
+    background: linear-gradient(135deg, #fbbf24, #f59e0b);
+    color: #0f172a;
+    border: none;
+    border-radius: 10px;
+    font-size: 13px;
+    font-weight: 700;
+    cursor: pointer;
+    font-family: inherit;
+}
+
+.submitBtn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+@media (max-width: 640px) {
+    .formRow {
+        grid-template-columns: 1fr;
+    }
+    .editRow {
+        flex-direction: column;
+    }
+}

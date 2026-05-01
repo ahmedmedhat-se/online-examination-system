@@ -394,3 +394,8 @@
     border-radius: 12px;
     border: 1.5px dashed #e2e8f0;
 }
+
+.badgePurple {
+    background: #faf5ff;
+    color: #a855f7;
+}

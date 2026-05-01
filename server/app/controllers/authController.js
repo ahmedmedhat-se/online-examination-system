@@ -8,62 +8,58 @@ import { setAuthCookies } from "../../utils/cookieHelper.js";
 
 export const authController = {
     register: async (req, res) => {
-        const connection = await db_config.getConnection();
         try {
-            await connection.beginTransaction();
-
             const { email, password, first_name, last_name, role } = req.body;
             const userRole = role || "student";
 
-            const [existing] = await connection.query(
-                'SELECT user_id FROM users WHERE email = ?', [email]
-            );
-            if (existing.length > 0) {
-                await connection.rollback();
-                return res.status(409).json({ message: "User with this email already exists", success: false });
+            const existingUser = await User.readUserByEmail(email);
+            if (existingUser) {
+                return res.status(409).json({
+                    message: "User with this email already exists",
+                    success: false
+                });
             }
 
             const hashedPassword = await bcrypt.hash(password, 12);
 
-            const [userResult] = await connection.query(
-                'INSERT INTO users (email, password_hash, first_name, last_name, role) VALUES (?, ?, ?, ?, ?)',
-                [email, hashedPassword, first_name, last_name, userRole]
-            );
-            const userId = userResult.insertId;
+            const userId = await User.create({
+                email,
+                password_hash: hashedPassword,
+                first_name,
+                last_name,
+                role: userRole,
+            });
 
             if (userRole === 'student') {
-                await connection.query('INSERT INTO students (user_id) VALUES (?)', [userId]);
+                await Student.create({ user_id: userId });
             } else if (userRole === 'instructor') {
-                await connection.query('INSERT INTO instructors (user_id) VALUES (?)', [userId]);
+                await Instructor.create({ user_id: userId });
             } else if (userRole === 'admin') {
-                await connection.query('INSERT INTO admins (user_id, access_level) VALUES (?, ?)', [userId, 'full']);
+                await Admin.create({ user_id: userId, access_level: 'full' });
             }
 
-            await connection.commit();
-
-            const [rows] = await connection.query(
-                'SELECT user_id, email, role, first_name, last_name, is_active, last_login, created_at FROM users WHERE user_id = ?',
-                [userId]
-            );
-            const user = rows[0];
+            const user = await User.readUserById(userId);
 
             const { accessToken, refreshToken } = generateTokens({ user_id: user.user_id, user_role: user.role });
+
             setAuthCookies(res, accessToken, refreshToken);
+
             await User.updateLastLogin(user.user_id);
+
+            const { password_hash: _, ...userWithoutPassword } = user;
 
             return res.status(201).json({
                 message: "User registered successfully",
                 success: true,
-                data: { user },
+                data: { user: userWithoutPassword },
                 tokens: { access_token: accessToken, refresh_token: refreshToken }
             });
-
         } catch (error) {
-            await connection.rollback();
             console.error(`Registration error: ${error.message}`);
-            return res.status(500).json({ message: "Internal server error", success: false });
-        } finally {
-            connection.release();
+            return res.status(500).json({
+                message: "Internal server error",
+                success: false
+            });
         }
     },
 

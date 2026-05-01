@@ -9,16 +9,21 @@ import { authRouter } from "./apis/authRoutes.js";
 import { studentRouter } from "./apis/studentRoutes.js";
 import { instructorRouter } from "./apis/instructorRoutes.js";
 import { adminRouter } from "./apis/adminRoutes.js";
+import { courseRouter } from "./apis/courseRoutes.js";
+import { categoryRouter } from "./apis/categoryRoutes.js";
+import { examRouter } from "./apis/examRoutes.js";
+import { questionRouter } from "./apis/questionRoutes.js";
+import { examAttemptRouter } from "./apis/examAttemptRoutes.js";
 
 dotenv.config();
 
 process.on("uncaughtException", (err) => {
-  console.error("💥 Uncaught Exception:", err.message);
+  console.error("Uncaught Exception:", err.message);
   console.error(err.stack);
 });
 
 process.on("unhandledRejection", (reason) => {
-  console.error("💥 Unhandled Rejection:", reason);
+  console.error("Unhandled Rejection:", reason);
 });
 
 const app = express();
@@ -67,10 +72,21 @@ const authLimiter = createLimiter(
   "Too many authentication requests. Please try again in 15 minutes."
 );
 
+const generalLimiter = createLimiter(
+  15 * 60 * 1000,
+  100,
+  "Too many requests. Please try again in 15 minutes."
+);
+
 app.use("/api/auth", authLimiter, authRouter);
-app.use("/api/student", studentRouter);
-app.use("/api/instructor", instructorRouter);
-app.use("/api/admin", adminRouter);
+app.use("/api/student", generalLimiter, studentRouter);
+app.use("/api/instructor", generalLimiter, instructorRouter);
+app.use("/api/admin", generalLimiter, adminRouter);
+app.use("/api/courses", generalLimiter, courseRouter);
+app.use("/api/categories", generalLimiter, categoryRouter);
+app.use("/api/exams", generalLimiter, examRouter);
+app.use("/api/questions", generalLimiter, questionRouter);
+app.use("/api/attempts", generalLimiter, examAttemptRouter);
 
 app.get("/health", (req, res) => {
   res.status(200).json({

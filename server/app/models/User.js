@@ -98,6 +98,11 @@ export const User = {
                 values.push(updates.role);
             }
 
+            if (updates.is_active !== undefined) {
+                fields.push("is_active = ?");
+                values.push(updates.is_active);
+            }
+
             if (fields.length === 0) {
                 throw new Error("No fields to update");
             }
@@ -114,7 +119,6 @@ export const User = {
             throw new Error(`Failed to update user: ${error.message}`);
         }
     },
-
     updateLastLogin: async (user_id) => {
         try {
             const stmt = "UPDATE users SET last_login = CURRENT_TIMESTAMP WHERE user_id = ?";
