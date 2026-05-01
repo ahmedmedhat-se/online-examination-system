@@ -283,7 +283,7 @@ http://localhost:PORT/api/auth
 4. Get Instructor Exams - **GET** {{base_url}}/exams
 
 ## Admin API
-```bash
+```js
 1. Get Admin Profile - **GET** {{base_url}}/profile
 2. Get System Statistics - **GET** {{base_url}}/stats
 3. Get All Users - **GET** {{base_url}}/users
