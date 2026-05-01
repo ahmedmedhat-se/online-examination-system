@@ -34,12 +34,15 @@
 ![Admin Dashboard](./public/admin/admin-dashboard.png)
 *Administrator control panel*
 
+### Admin User-Management Dashboard  
 ![User Management](./public/admin/user-management.png)
 *Admin user management interface*
 
+### Admin Exam-Management Dashboard  
 ![Exam Management](./public/admin/exams-management.png)
 *Admin exam management interface*
 
+### Admin Course-Management Dashboard  
 ![Course Management](./public/admin/course-managemant.png)
 *Admin course management interface*
 
