@@ -7,7 +7,7 @@ const Navbar = () => {
     const [menuOpen, setMenuOpen] = useState(false);
     const location = useLocation();
 
-    useEffect(() => {
+    const readUser = useCallback(() => {
         const stored = localStorage.getItem('user');
         if (stored) {
             try {
@@ -15,24 +15,24 @@ const Navbar = () => {
             } catch {
                 setUser(null);
             }
+        } else {
+            setUser(null);
         }
+    }, []);
 
-        const handleStorageChange = () => {
-            const updated = localStorage.getItem('user');
-            if (updated) {
-                try {
-                    setUser(JSON.parse(updated));
-                } catch {
-                    setUser(null);
-                }
-            } else {
-                setUser(null);
-            }
-        };
+    useEffect(() => {
+        readUser();
+
+        const handleStorageChange = () => readUser();
+        const handleAuthChange = () => readUser();
 
         window.addEventListener('storage', handleStorageChange);
-        return () => window.removeEventListener('storage', handleStorageChange);
-    }, []);
+        window.addEventListener('auth-change', handleAuthChange);
+        return () => {
+            window.removeEventListener('storage', handleStorageChange);
+            window.removeEventListener('auth-change', handleAuthChange);
+        };
+    }, [readUser]);
 
     useEffect(() => {
         setMenuOpen(false);
@@ -48,26 +48,24 @@ const Navbar = () => {
 
     const navLinks = {
         student: [
-            { to: '/dashboard', icon: 'fa-th-large', label: 'Dashboard' },
+            { to: '/dashboard/student', icon: 'fa-th-large', label: 'Dashboard' },
             { to: '/exams', icon: 'fa-file-alt', label: 'My Exams' },
             { to: '/exams/upcoming', icon: 'fa-calendar-alt', label: 'Upcoming', badge: '2' },
             { to: '/results', icon: 'fa-chart-bar', label: 'Results' },
             { to: '/profile', icon: 'fa-user-graduate', label: 'Profile' },
         ],
         instructor: [
-            { to: '/dashboard', icon: 'fa-th-large', label: 'Dashboard' },
+            { to: '/dashboard/instructor', icon: 'fa-th-large', label: 'Dashboard' },
             { to: '/exams/manage', icon: 'fa-tasks', label: 'Manage Exams' },
             { to: '/questions/bank', icon: 'fa-layer-group', label: 'Question Bank' },
             { to: '/students', icon: 'fa-users', label: 'Students' },
             { to: '/results/review', icon: 'fa-clipboard-check', label: 'Review' },
         ],
         admin: [
-            { to: '/dashboard', icon: 'fa-th-large', label: 'Dashboard' },
-            { to: '/users/manage', icon: 'fa-user-shield', label: 'User Management' },
-            { to: '/courses', icon: 'fa-book-open', label: 'Courses' },
-            { to: '/categories', icon: 'fa-tags', label: 'Categories' },
-            { to: '/reports', icon: 'fa-chart-pie', label: 'Reports' },
-            { to: '/settings', icon: 'fa-cog', label: 'Settings' },
+            { to: '/dashboard/admin?tab=overview', icon: 'fa-th-large', label: 'Dashboard' },
+            { to: '/dashboard/admin?tab=users', icon: 'fa-user-shield', label: 'Users' },
+            { to: '/dashboard/admin?tab=exams', icon: 'fa-file-alt', label: 'Exams' },
+            { to: '/dashboard/admin?tab=courses', icon: 'fa-book-open', label: 'Courses' },
         ],
     };
 
@@ -101,7 +99,7 @@ const Navbar = () => {
                         <li key={link.to} className={styles.navItem} role="none">
                             <NavLink
                                 to={link.to}
-                                end={link.to === '/dashboard'}
+                                end={link.to === `/dashboard/${user?.role}`}
                                 className={({ isActive }) =>
                                     `${styles.navLink} ${isActive ? styles.active : ''}`
                                 }

@@ -53,7 +53,8 @@ const Header = () => {
         localStorage.removeItem('refreshToken');
         setUser(null);
         setDropdownOpen(false);
-        navigate('/auth', { replace: true });
+        window.dispatchEvent(new Event('auth-change'));
+        navigate('/', { replace: true });
     }, [navigate]);
 
     const getInitials = (firstName, lastName) => {

@@ -1,13 +1,20 @@
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faTrash, faSpinner, faToggleOn, faToggleOff, faEye } from '@fortawesome/free-solid-svg-icons';
+import { faTrash, faSpinner, faToggleOn, faToggleOff, faSearch, faPlus } from '@fortawesome/free-solid-svg-icons';
 import apiClient from '../../../config/axios.js';
 import adminStyles from '../../styles/AdminDashboard.module.css';
+
+const PAGE_SIZE = 10;
 
 function ExamManagement() {
     const [exams, setExams] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState('');
+    const [search, setSearch] = useState('');
+    const [page, setPage] = useState(0);
+    const [showAdd, setShowAdd] = useState(false);
+    const [form, setForm] = useState({ title: '', description: '', duration_minutes: 60, total_marks: 100, passing_marks: 50, start_time: '', end_time: '', course_id: '', is_published: false });
+    const [submitting, setSubmitting] = useState(false);
     const abortRef = useRef(null);
 
     const fetchExams = useCallback(async () => {
@@ -30,6 +37,16 @@ function ExamManagement() {
         return () => { if (abortRef.current) abortRef.current.abort(); };
     }, [fetchExams]);
 
+    const filteredExams = useMemo(() => {
+        if (!search) return exams;
+        const s = search.toLowerCase();
+        return exams.filter(e => e.title.toLowerCase().includes(s) || (e.course_name && e.course_name.toLowerCase().includes(s)));
+    }, [exams, search]);
+
+    const paginatedExams = useMemo(() => filteredExams.slice(page * PAGE_SIZE, (page + 1) * PAGE_SIZE), [filteredExams, page]);
+    const totalPages = Math.ceil(filteredExams.length / PAGE_SIZE);
+    useEffect(() => { setPage(0); }, [search]);
+
     const togglePublish = async (examId, currentStatus) => {
         try {
             await apiClient.put(`/api/exams/${examId}`, { is_published: !currentStatus });
@@ -40,12 +57,29 @@ function ExamManagement() {
     };
 
     const deleteExam = async (examId) => {
-        if (!window.confirm('Delete this exam?')) return;
+        if (!window.confirm('Delete this exam and all its questions?')) return;
         try {
             await apiClient.delete(`/api/exams/${examId}`);
             setExams(prev => prev.filter(e => e.exam_id !== examId));
         } catch {
             setError('Delete failed.');
+        }
+    };
+
+    const handleAdd = async (e) => {
+        e.preventDefault();
+        setSubmitting(true);
+        try {
+            const res = await apiClient.post('/api/exams', form);
+            if (res.data.success) {
+                setExams(prev => [...prev, res.data.data.exam]);
+                setShowAdd(false);
+                setForm({ title: '', description: '', duration_minutes: 60, total_marks: 100, passing_marks: 50, start_time: '', end_time: '', course_id: '', is_published: false });
+            }
+        } catch {
+            setError('Failed to create exam.');
+        } finally {
+            setSubmitting(false);
         }
     };
 
@@ -56,7 +90,36 @@ function ExamManagement() {
     return (
         <div className={adminStyles.tableContainer}>
             {error && <div className={adminStyles.toast}>{error}</div>}
-            <div className={adminStyles.tableHeader}><h2>All Exams ({exams.length})</h2></div>
+            <div className={adminStyles.toolbar}>
+                <div className={adminStyles.searchWrap}>
+                    <FontAwesomeIcon icon={faSearch} className={adminStyles.searchIcon} />
+                    <input type="text" placeholder="Search exams..." value={search} onChange={e => setSearch(e.target.value)} className={adminStyles.searchInput} maxLength={100} />
+                </div>
+                <button className={adminStyles.addBtn} onClick={() => setShowAdd(!showAdd)}>
+                    <FontAwesomeIcon icon={faPlus} /> Add Exam
+                </button>
+            </div>
+
+            {showAdd && (
+                <form onSubmit={handleAdd} className={adminStyles.formCard}>
+                    <div className={adminStyles.formRow}>
+                        <input placeholder="Title" value={form.title} onChange={e => setForm(p => ({ ...p, title: e.target.value }))} className={adminStyles.editInput} required />
+                        <input type="number" placeholder="Duration (min)" value={form.duration_minutes} onChange={e => setForm(p => ({ ...p, duration_minutes: parseInt(e.target.value) || 60 }))} className={adminStyles.editInput} />
+                        <input type="number" placeholder="Total Marks" value={form.total_marks} onChange={e => setForm(p => ({ ...p, total_marks: parseInt(e.target.value) || 100 }))} className={adminStyles.editInput} />
+                        <input type="number" placeholder="Passing Marks" value={form.passing_marks} onChange={e => setForm(p => ({ ...p, passing_marks: parseInt(e.target.value) || 50 }))} className={adminStyles.editInput} />
+                        <input type="datetime-local" value={form.start_time} onChange={e => setForm(p => ({ ...p, start_time: e.target.value }))} className={adminStyles.editInput} required />
+                        <input type="datetime-local" value={form.end_time} onChange={e => setForm(p => ({ ...p, end_time: e.target.value }))} className={adminStyles.editInput} required />
+                        <input type="number" placeholder="Course ID" value={form.course_id} onChange={e => setForm(p => ({ ...p, course_id: e.target.value }))} className={adminStyles.editInput} required />
+                    </div>
+                    <textarea placeholder="Description" value={form.description} onChange={e => setForm(p => ({ ...p, description: e.target.value }))} className={adminStyles.editTextarea} rows={2} />
+                    <label className={adminStyles.checkLabel}>
+                        <input type="checkbox" checked={form.is_published} onChange={e => setForm(p => ({ ...p, is_published: e.target.checked }))} /> Publish immediately
+                    </label>
+                    <button type="submit" className={adminStyles.submitBtn} disabled={submitting}>{submitting ? 'Creating...' : 'Create Exam'}</button>
+                </form>
+            )}
+
+            <div className={adminStyles.tableHeader}><h2>{filteredExams.length} exam{filteredExams.length !== 1 ? 's' : ''}</h2></div>
             <div className={adminStyles.tableWrap}>
                 <table className={adminStyles.table}>
                     <thead>
@@ -70,12 +133,12 @@ function ExamManagement() {
                         </tr>
                     </thead>
                     <tbody>
-                        {exams.map(e => (
+                        {paginatedExams.map(e => (
                             <tr key={e.exam_id}>
                                 <td>{e.title}</td>
                                 <td>{e.course_name || '—'}</td>
                                 <td>{e.duration_minutes} min</td>
-                                <td>{e.total_marks}</td>
+                                <td>{e.passing_marks}/{e.total_marks}</td>
                                 <td>
                                     <span className={e.is_published ? adminStyles.statusActive : adminStyles.statusInactive}>
                                         {e.is_published ? 'Yes' : 'No'}
@@ -93,10 +156,17 @@ function ExamManagement() {
                                 </td>
                             </tr>
                         ))}
-                        {exams.length === 0 && <tr><td colSpan={6} className={adminStyles.emptyRow}>No exams found.</td></tr>}
+                        {paginatedExams.length === 0 && <tr><td colSpan={6} className={adminStyles.emptyRow}>No exams found.</td></tr>}
                     </tbody>
                 </table>
             </div>
+            {totalPages > 1 && (
+                <div className={adminStyles.pagination}>
+                    <button onClick={() => setPage(p => Math.max(0, p - 1))} disabled={page === 0} className={adminStyles.pageBtn}>Previous</button>
+                    <span className={adminStyles.pageInfo}>Page {page + 1} of {totalPages}</span>
+                    <button onClick={() => setPage(p => Math.min(totalPages - 1, p + 1))} disabled={page >= totalPages - 1} className={adminStyles.pageBtn}>Next</button>
+                </div>
+            )}
         </div>
     );
 }

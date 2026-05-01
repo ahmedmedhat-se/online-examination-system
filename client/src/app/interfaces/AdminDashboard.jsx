@@ -1,6 +1,7 @@
 import { useEffect, useState, useCallback, useRef } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faUsers, faBookOpen, faFileAlt, faShieldHalved, faSpinner, faSyncAlt } from '@fortawesome/free-solid-svg-icons';
+import { faUsers, faBookOpen, faFileAlt, faShieldHalved, faSpinner, faSyncAlt, faUserGraduate, faChalkboardTeacher } from '@fortawesome/free-solid-svg-icons';
 import apiClient from '../../config/axios.js';
 import styles from '../styles/Dashboard.module.css';
 import adminStyles from '../styles/AdminDashboard.module.css';
@@ -9,9 +10,10 @@ import ExamManagement from '../components/admin/ExamManagement.jsx';
 import CourseManagement from '../components/admin/CourseManagement.jsx';
 
 function AdminDashboard() {
+    const [searchParams, setSearchParams] = useSearchParams();
     const [user, setUser] = useState(null);
     const [stats, setStats] = useState({ users: 0, students: 0, instructors: 0, exams: 0, courses: 0 });
-    const [activeTab, setActiveTab] = useState('overview');
+    const [activeTab, setActiveTab] = useState(searchParams.get('tab') || 'overview');
     const [loading, setLoading] = useState(true);
     const abortRef = useRef(null);
 
@@ -38,13 +40,25 @@ function AdminDashboard() {
         return () => { if (abortRef.current) abortRef.current.abort(); };
     }, [fetchStats]);
 
+    useEffect(() => {
+        const tab = searchParams.get('tab');
+        if (tab && ['overview', 'users', 'exams', 'courses'].includes(tab)) {
+            setActiveTab(tab);
+        }
+    }, [searchParams]);
+
+    const handleTabChange = (tab) => {
+        setActiveTab(tab);
+        setSearchParams(tab === 'overview' ? {} : { tab });
+    };
+
     const firstName = user?.first_name || 'Admin';
 
     const tabs = [
         { key: 'overview', label: 'Overview', icon: faShieldHalved },
-        { key: 'users', label: 'User Management', icon: faUsers },
-        { key: 'exams', label: 'Exam Management', icon: faFileAlt },
-        { key: 'courses', label: 'Course Management', icon: faBookOpen },
+        { key: 'users', label: 'Users', icon: faUsers },
+        { key: 'exams', label: 'Exams', icon: faFileAlt },
+        { key: 'courses', label: 'Courses', icon: faBookOpen },
     ];
 
     if (loading) {
@@ -73,7 +87,7 @@ function AdminDashboard() {
                     <button
                         key={tab.key}
                         className={`${adminStyles.tab} ${activeTab === tab.key ? adminStyles.tabActive : ''}`}
-                        onClick={() => setActiveTab(tab.key)}
+                        onClick={() => handleTabChange(tab.key)}
                     >
                         <FontAwesomeIcon icon={tab.icon} />
                         <span>{tab.label}</span>
@@ -82,46 +96,44 @@ function AdminDashboard() {
             </div>
 
             {activeTab === 'overview' && (
-                <>
-                    <div className={styles.statsGrid}>
-                        <div className={styles.statCard}>
-                            <div className={`${styles.statIcon} ${styles.statIconBlue}`}>
-                                <FontAwesomeIcon icon={faUsers} />
-                            </div>
-                            <div className={styles.statContent}>
-                                <span className={styles.statValue}>{stats.users}</span>
-                                <span className={styles.statLabel}>Total Users</span>
-                            </div>
+                <div className={styles.statsGrid}>
+                    <div className={styles.statCard}>
+                        <div className={`${styles.statIcon} ${styles.statIconBlue}`}>
+                            <FontAwesomeIcon icon={faUsers} />
                         </div>
-                        <div className={styles.statCard}>
-                            <div className={`${styles.statIcon} ${styles.statIconGreen}`}>
-                                <FontAwesomeIcon icon={faUsers} />
-                            </div>
-                            <div className={styles.statContent}>
-                                <span className={styles.statValue}>{stats.students}</span>
-                                <span className={styles.statLabel}>Students</span>
-                            </div>
-                        </div>
-                        <div className={styles.statCard}>
-                            <div className={`${styles.statIcon} ${styles.statIconPurple}`}>
-                                <FontAwesomeIcon icon={faUsers} />
-                            </div>
-                            <div className={styles.statContent}>
-                                <span className={styles.statValue}>{stats.instructors}</span>
-                                <span className={styles.statLabel}>Instructors</span>
-                            </div>
-                        </div>
-                        <div className={styles.statCard}>
-                            <div className={`${styles.statIcon} ${styles.statIconAmber}`}>
-                                <FontAwesomeIcon icon={faFileAlt} />
-                            </div>
-                            <div className={styles.statContent}>
-                                <span className={styles.statValue}>{stats.exams}</span>
-                                <span className={styles.statLabel}>Exams</span>
-                            </div>
+                        <div className={styles.statContent}>
+                            <span className={styles.statValue}>{stats.users}</span>
+                            <span className={styles.statLabel}>Total Users</span>
                         </div>
                     </div>
-                </>
+                    <div className={styles.statCard}>
+                        <div className={`${styles.statIcon} ${styles.statIconGreen}`}>
+                            <FontAwesomeIcon icon={faUserGraduate} />
+                        </div>
+                        <div className={styles.statContent}>
+                            <span className={styles.statValue}>{stats.students}</span>
+                            <span className={styles.statLabel}>Students</span>
+                        </div>
+                    </div>
+                    <div className={styles.statCard}>
+                        <div className={`${styles.statIcon} ${styles.statIconPurple}`}>
+                            <FontAwesomeIcon icon={faChalkboardTeacher} />
+                        </div>
+                        <div className={styles.statContent}>
+                            <span className={styles.statValue}>{stats.instructors}</span>
+                            <span className={styles.statLabel}>Instructors</span>
+                        </div>
+                    </div>
+                    <div className={styles.statCard}>
+                        <div className={`${styles.statIcon} ${styles.statIconAmber}`}>
+                            <FontAwesomeIcon icon={faFileAlt} />
+                        </div>
+                        <div className={styles.statContent}>
+                            <span className={styles.statValue}>{stats.exams}</span>
+                            <span className={styles.statLabel}>Exams</span>
+                        </div>
+                    </div>
+                </div>
             )}
 
             {activeTab === 'users' && <UserManagement onStatsChange={fetchStats} />}

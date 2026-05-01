@@ -40,6 +40,10 @@ client/
 ├── src/
 │   ├── app/
 │   │   ├── components/
+│   │   │   ├── admin/
+│   │   │   │   ├── CourseManagement.jsx
+│   │   │   │   ├── ExamManagement.jsx
+│   │   │   │   └── UserManagement.jsx
 │   │   │   ├── auth/
 │   │   │   │   └── Auth.jsx
 │   │   │   ├── Footer.jsx

@@ -261,6 +261,7 @@ function Auth() {
 
                 clearFormData();
                 window.dispatchEvent(new Event('storage'));
+                window.dispatchEvent(new Event('auth-change'));
 
                 const role = user?.role || 'student';
                 navigate(`/dashboard/${role}`, { replace: true });
