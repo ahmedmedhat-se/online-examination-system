@@ -283,6 +283,7 @@ http://localhost:PORT/api/auth
 4. Get Instructor Exams - **GET** {{base_url}}/exams
 
 ## Admin API
+```bash
 1. Get Admin Profile - **GET** {{base_url}}/profile
 2. Get System Statistics - **GET** {{base_url}}/stats
 3. Get All Users - **GET** {{base_url}}/users
@@ -291,6 +292,7 @@ http://localhost:PORT/api/auth
 6. Get All Admins - **GET** {{base_url}}/admins
 7. Update User - **PUT** {{base_url}}/users/:id
 8. Delete User - **DELETE** {{base_url}}/users/:id
+```
 
 ---
 ## License
