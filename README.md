@@ -289,6 +289,8 @@ http://localhost:PORT/api/auth
 4. Get All Students - **GET** {{base_url}}/students
 5. Get All Instructors - **GET** {{base_url}}/instructors
 6. Get All Admins - **GET** {{base_url}}/admins
+7. Update User - **PUT** {{base_url}}/users/:id
+8. Delete User - **DELETE** {{base_url}}/users/:id
 
 ---
 ## License
