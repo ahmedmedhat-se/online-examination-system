@@ -19,6 +19,31 @@
 </div>
 
 ---
+# Web System Screenshots
+## Authentication Screens
+### Login Page
+![Login Page](./public/auth/login-form.png)
+*User authentication interface*
+
+### Registration Page  
+![Registration](./public/auth/register-form.png)
+*New user registration form*
+
+## Admin Screens
+### Admin Dashboard
+![Admin Dashboard](./public/admin/admin-dashboard.png)
+*Administrator control panel*
+
+![User Management](./public/admin/user-management.png)
+*Admin user management interface*
+
+![Exam Management](./public/admin/exams-management.png)
+*Admin exam management interface*
+
+![Course Management](./public/admin/course-managemant.png)
+*Admin course management interface*
+
+---
 ## Project Structure
 
 ### ONLINE-EXAMINATION-SYSTEM
