@@ -25,7 +25,7 @@ const app = express();
 const PORT = process.env.PORT || 8080;
 
 app.use(cors({
-  origin: process.env.FRONTEND_URL || "http://localhost:5173",
+  origin: process.env.FRONTEND_URL || "http://localhost:5000",
   credentials: true,
   methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
   allowedHeaders: [
@@ -82,7 +82,7 @@ app.get("/health", (req, res) => {
 });
 
 app.use((err, req, res, next) => {
-  console.error("💥 Route Error:", err.message);
+  console.error("Route Error:", err.message);
   console.error(err.stack);
   res.status(err.status || 500).json({
     success: false,
@@ -95,6 +95,6 @@ app.listen(PORT, () => {
 - Server is running on: http://localhost:${PORT}
 - Environment: ${process.env.NODE_ENV || "development"}
 - Started: ${new Date().toLocaleString()}
-- Frontend: ${process.env.FRONTEND_URL || "http://localhost:5173"}
+- Frontend: ${process.env.FRONTEND_URL || "http://localhost:5000"}
 `);
 });
