@@ -3,7 +3,15 @@ import { Exam } from "../models/Exam.js";
 export const examController = {
     create: async (req, res) => {
         try {
-            const examId = await Exam.create({ ...req.body, instructor_id: req.user.instructor_id || req.body.instructor_id });
+            const instructorId = req.user.user_role === 'instructor'
+                ? req.user.instructor_id
+                : req.body.instructor_id;
+
+            if (!instructorId) {
+                return res.status(400).json({ success: false, message: "Instructor ID is required" });
+            }
+
+            const examId = await Exam.create({ ...req.body, instructor_id: instructorId });
             const exam = await Exam.readById(examId);
             return res.status(201).json({ success: true, message: "Exam created", data: { exam } });
         } catch (error) {

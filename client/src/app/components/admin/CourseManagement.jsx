@@ -1,10 +1,12 @@
 import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faTrash, faSpinner, faPlus, faSearch } from '@fortawesome/free-solid-svg-icons';
+import { faTrash, faSpinner, faPlus, faSearch, faHashtag, faAlignLeft, faClock, faBookOpen } from '@fortawesome/free-solid-svg-icons';
 import apiClient from '../../../config/axios.js';
 import adminStyles from '../../styles/AdminDashboard.module.css';
 
 const PAGE_SIZE = 10;
+
+const INITIAL_FORM = { course_code: '', course_name: '', description: '', credit_hours: 3 };
 
 function CourseManagement() {
     const [courses, setCourses] = useState([]);
@@ -13,7 +15,7 @@ function CourseManagement() {
     const [search, setSearch] = useState('');
     const [page, setPage] = useState(0);
     const [showForm, setShowForm] = useState(false);
-    const [form, setForm] = useState({ course_code: '', course_name: '', description: '', credit_hours: 3 });
+    const [form, setForm] = useState({ ...INITIAL_FORM });
     const [submitting, setSubmitting] = useState(false);
     const abortRef = useRef(null);
 
@@ -49,16 +51,23 @@ function CourseManagement() {
 
     const handleSubmit = async (e) => {
         e.preventDefault();
+        if (!form.course_code.trim() || !form.course_name.trim()) return;
         setSubmitting(true);
         try {
-            const res = await apiClient.post('/api/courses', form);
+            const payload = {
+                course_code: form.course_code.trim().toUpperCase().slice(0, 20),
+                course_name: form.course_name.trim().slice(0, 100),
+                description: form.description.trim().slice(0, 500) || null,
+                credit_hours: Math.max(1, Math.min(6, parseInt(form.credit_hours) || 3)),
+            };
+            const res = await apiClient.post('/api/courses', payload);
             if (res.data.success) {
                 setCourses(prev => [...prev, res.data.data.course]);
                 setShowForm(false);
-                setForm({ course_code: '', course_name: '', description: '', credit_hours: 3 });
+                setForm({ ...INITIAL_FORM });
             }
-        } catch {
-            setError('Failed to create course.');
+        } catch (err) {
+            setError(err.response?.data?.message || 'Failed to create course.');
         } finally {
             setSubmitting(false);
         }
@@ -84,24 +93,74 @@ function CourseManagement() {
             <div className={adminStyles.toolbar}>
                 <div className={adminStyles.searchWrap}>
                     <FontAwesomeIcon icon={faSearch} className={adminStyles.searchIcon} />
-                    <input type="text" placeholder="Search courses..." value={search} onChange={e => setSearch(e.target.value)} className={adminStyles.searchInput} maxLength={100} />
+                    <input type="text" placeholder="Search courses by name or code..." value={search} onChange={e => setSearch(e.target.value.slice(0, 100))} className={adminStyles.searchInput} maxLength={100} />
                 </div>
-                <button className={adminStyles.addBtn} onClick={() => setShowForm(!showForm)}>
+                <button className={adminStyles.addBtn} onClick={() => { setShowForm(!showForm); setForm({ ...INITIAL_FORM }); }}>
                     <FontAwesomeIcon icon={faPlus} /> Add Course
                 </button>
             </div>
 
             {showForm && (
                 <form onSubmit={handleSubmit} className={adminStyles.formCard}>
-                    <div className={adminStyles.formRow}>
-                        <input placeholder="Course Code" value={form.course_code} onChange={e => setForm(p => ({ ...p, course_code: e.target.value }))} className={adminStyles.editInput} required maxLength={20} />
-                        <input placeholder="Course Name" value={form.course_name} onChange={e => setForm(p => ({ ...p, course_name: e.target.value }))} className={adminStyles.editInput} required maxLength={100} />
-                        <input type="number" min="1" max="6" placeholder="Credit Hours" value={form.credit_hours} onChange={e => setForm(p => ({ ...p, credit_hours: parseInt(e.target.value) || 3 }))} className={adminStyles.editInput} />
+                    <h3 className={adminStyles.formTitle}><FontAwesomeIcon icon={faBookOpen} /> Create New Course</h3>
+
+                    <div className={adminStyles.formRow3}>
+                        <div className={adminStyles.formGroup}>
+                            <label className={adminStyles.formLabel}><FontAwesomeIcon icon={faHashtag} /> Course Code</label>
+                            <input
+                                placeholder="e.g. CS101"
+                                value={form.course_code}
+                                onChange={e => setForm(p => ({ ...p, course_code: e.target.value }))}
+                                className={adminStyles.editInput}
+                                required
+                                maxLength={20}
+                            />
+                        </div>
+                        <div className={adminStyles.formGroup}>
+                            <label className={adminStyles.formLabel}><FontAwesomeIcon icon={faAlignLeft} /> Course Name</label>
+                            <input
+                                placeholder="e.g. Introduction to Programming"
+                                value={form.course_name}
+                                onChange={e => setForm(p => ({ ...p, course_name: e.target.value }))}
+                                className={adminStyles.editInput}
+                                required
+                                maxLength={100}
+                            />
+                        </div>
+                        <div className={adminStyles.formGroup}>
+                            <label className={adminStyles.formLabel}><FontAwesomeIcon icon={faClock} /> Credit Hours</label>
+                            <input
+                                type="number"
+                                placeholder="3"
+                                value={form.credit_hours}
+                                onChange={e => setForm(p => ({ ...p, credit_hours: parseInt(e.target.value) || 3 }))}
+                                className={adminStyles.editInput}
+                                min="1"
+                                max="6"
+                            />
+                        </div>
                     </div>
-                    <textarea placeholder="Description (optional)" value={form.description} onChange={e => setForm(p => ({ ...p, description: e.target.value }))} className={adminStyles.editTextarea} rows={2} maxLength={500} />
-                    <button type="submit" className={adminStyles.submitBtn} disabled={submitting}>
-                        {submitting ? 'Creating...' : 'Create Course'}
-                    </button>
+
+                    <div className={adminStyles.formGroup}>
+                        <label className={adminStyles.formLabel}><FontAwesomeIcon icon={faAlignLeft} /> Description</label>
+                        <textarea
+                            placeholder="Brief course description (optional)..."
+                            value={form.description}
+                            onChange={e => setForm(p => ({ ...p, description: e.target.value }))}
+                            className={adminStyles.editTextarea}
+                            rows={3}
+                            maxLength={500}
+                        />
+                    </div>
+
+                    <div style={{ display: 'flex', gap: '8px' }}>
+                        <button type="submit" className={adminStyles.submitBtn} disabled={submitting}>
+                            {submitting ? 'Creating...' : 'Create Course'}
+                        </button>
+                        <button type="button" className={adminStyles.addBtn} style={{ background: '#e2e8f0', color: '#475569' }} onClick={() => setShowForm(false)}>
+                            Cancel
+                        </button>
+                    </div>
                 </form>
             )}
 
@@ -120,7 +179,10 @@ function CourseManagement() {
                         {paginatedCourses.map(c => (
                             <tr key={c.course_id}>
                                 <td><span className={adminStyles.badge}>{c.course_code}</span></td>
-                                <td>{c.course_name}</td>
+                                <td>
+                                    <div style={{ fontWeight: 600 }}>{c.course_name}</div>
+                                    {c.description && <div style={{ fontSize: 12, color: '#94a3b8', marginTop: 2 }}>{c.description.slice(0, 80)}{c.description.length > 80 ? '...' : ''}</div>}
+                                </td>
                                 <td>{c.credit_hours}</td>
                                 <td>
                                     <button className={`${adminStyles.actionBtn} ${adminStyles.actionDelete}`} onClick={() => deleteCourse(c.course_id)} title="Delete">

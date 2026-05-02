@@ -7,8 +7,8 @@ export const courseRouter = express.Router();
 
 courseRouter.get("/", courseController.getAll);
 courseRouter.get("/:id", courseController.getById);
-courseRouter.post("/", authenticate, authorize("admin"), courseController.create);
+courseRouter.post("/", authenticate, authorize("admin", "instructor"), courseController.create);
 courseRouter.put("/:id", authenticate, authorize("admin", "instructor"), courseController.update);
-courseRouter.delete("/:id", authenticate, authorize("admin"), courseController.delete);
+courseRouter.delete("/:id", authenticate, authorize("admin", "instructor"), courseController.delete);
 courseRouter.post("/:id/instructors", authenticate, authorize("admin"), courseController.assignInstructor);
 courseRouter.delete("/:id/instructors", authenticate, authorize("admin"), courseController.removeInstructor);

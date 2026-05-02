@@ -71,6 +71,7 @@ client/
 │   │   │   ├── admin/
 │   │   │   │   ├── CourseManagement.jsx
 │   │   │   │   ├── ExamManagement.jsx
+│   │   │   │   ├── QuestionManagement.jsx
 │   │   │   │   └── UserManagement.jsx
 │   │   │   ├── auth/
 │   │   │   │   └── Auth.jsx

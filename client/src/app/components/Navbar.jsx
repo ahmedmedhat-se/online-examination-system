@@ -55,9 +55,9 @@ const Navbar = () => {
             { to: '/profile', icon: 'fa-user-graduate', label: 'Profile' },
         ],
         instructor: [
-            { to: '/dashboard/instructor', icon: 'fa-th-large', label: 'Dashboard' },
-            { to: '/exams/manage', icon: 'fa-tasks', label: 'Manage Exams' },
-            { to: '/questions/bank', icon: 'fa-layer-group', label: 'Question Bank' },
+            { to: '/dashboard/instructor?tab=overview', icon: 'fa-th-large', label: 'Dashboard' },
+            { to: '/dashboard/instructor?tab=exams', icon: 'fa-tasks', label: 'Manage Exams' },
+            { to: '/dashboard/instructor?tab=courses', icon: 'fa-book-open', label: 'Courses' },
             { to: '/students', icon: 'fa-users', label: 'Students' },
             { to: '/results/review', icon: 'fa-clipboard-check', label: 'Review' },
         ],
