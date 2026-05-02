@@ -804,3 +804,75 @@
         justify-content: center;
     }
 }
+
+.badgeWarning {
+    background: #fef3c7;
+    color: #d97706;
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-size: 0.75rem;
+    font-weight: 600;
+}
+
+.badgeSecondary {
+    background: #e2e8f0;
+    color: #64748b;
+}
+
+.studentsTable {
+    overflow-x: auto;
+    margin-top: 1rem;
+}
+
+.studentsTable table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.studentsTable th,
+.studentsTable td {
+    padding: 0.75rem;
+    text-align: left;
+    border-bottom: 1px solid var(--color-border);
+}
+
+.studentsTable th {
+    background: var(--color-surface);
+    font-weight: 600;
+}
+
+.studentFilters {
+    margin-bottom: 1.5rem;
+}
+
+.select {
+    padding: 0.5rem;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-sm);
+    min-width: 250px;
+}
+
+.examsGrid {
+    display: grid;
+    gap: 1rem;
+    margin-top: 1rem;
+}
+
+.examCard {
+    background: white;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    padding: 1rem;
+}
+
+.questionCard {
+    background: var(--color-surface);
+    border-radius: var(--radius-sm);
+    padding: 1rem;
+    margin-bottom: 1rem;
+}
+
+.correctIcon {
+    color: var(--color-success);
+    margin-left: 0.5rem;
+}

@@ -57,9 +57,7 @@ const Navbar = () => {
         instructor: [
             { to: '/dashboard/instructor?tab=overview', icon: 'fa-th-large', label: 'Dashboard' },
             { to: '/dashboard/instructor?tab=exams', icon: 'fa-tasks', label: 'Manage Exams' },
-            { to: '/dashboard/instructor?tab=courses', icon: 'fa-book-open', label: 'Courses' },
-            { to: '/students', icon: 'fa-users', label: 'Students' },
-            { to: '/results/review', icon: 'fa-clipboard-check', label: 'Review' },
+            { to: '/dashboard/instructor?tab=students', icon: 'fa-users', label: 'Students' },
         ],
         admin: [
             { to: '/dashboard/admin?tab=overview', icon: 'fa-th-large', label: 'Dashboard' },

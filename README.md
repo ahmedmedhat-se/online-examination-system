@@ -20,6 +20,11 @@
 
 ---
 # Web System Screenshots
+## Guest Screens
+### Guest Dashboard
+![Guest Dashboard](./public/interfaces/guest-dashboard.png)
+*Guest interface*
+
 ## Authentication Screens
 ### Login Page
 ![Login Page](./public/auth/login-form.png)
