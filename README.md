@@ -205,7 +205,6 @@ server/
 | ![MySQL Workbench](https://img.shields.io/badge/MySQL_Workbench-4479A1?style=for-the-badge&logo=mysql&logoColor=white)    | Database Design & Management      | 8.x     |
 
 ---
-
 ## Installation
 
 ### Frontend Dependencies

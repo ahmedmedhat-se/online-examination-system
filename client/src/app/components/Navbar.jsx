@@ -48,11 +48,9 @@ const Navbar = () => {
 
     const navLinks = {
         student: [
-            { to: '/dashboard/student', icon: 'fa-th-large', label: 'Dashboard' },
-            { to: '/exams', icon: 'fa-file-alt', label: 'My Exams' },
-            { to: '/exams/upcoming', icon: 'fa-calendar-alt', label: 'Upcoming', badge: '2' },
-            { to: '/results', icon: 'fa-chart-bar', label: 'Results' },
-            { to: '/profile', icon: 'fa-user-graduate', label: 'Profile' },
+            { to: '/dashboard/student?tab=overview', icon: 'fa-th-large', label: 'Dashboard' },
+            { to: '/dashboard/student?tab=exams', icon: 'fa-file-alt', label: 'My Exams' },
+            { to: '/dashboard/student?tab=results', icon: 'fa-chart-bar', label: 'Results' },
         ],
         instructor: [
             { to: '/dashboard/instructor?tab=overview', icon: 'fa-th-large', label: 'Dashboard' },

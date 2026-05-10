@@ -63,22 +63,22 @@ const Header = () => {
 
     const userNavLinks = [
         { to: '/', label: 'Home', end: true },
-        { to: '/dashboard', label: 'Dashboard' },
-        { to: '/exams', label: 'Exams' },
+        { to: '/dashboard/student?tab=overview', label: 'Dashboard' },
+        { to: '/dashboard/student?tab=exams', label: 'Exams' },
     ];
 
     const adminNavLinks = [
         { to: '/', label: 'Home', end: true },
-        { to: '/dashboard', label: 'Dashboard' },
-        { to: '/users/manage', label: 'Users' },
-        { to: '/courses', label: 'Courses' },
+        { to: '/dashboard/admin?tab=overview', label: 'Dashboard' },
+        { to: '/dashboard/admin?tab=users', label: 'Users' },
+        { to: '/dashboard/admin?tab=courses', label: 'Courses' },
     ];
 
     const instructorNavLinks = [
         { to: '/', label: 'Home', end: true },
-        { to: '/dashboard', label: 'Dashboard' },
-        { to: '/exams/manage', label: 'Manage Exams' },
-        { to: '/students', label: 'Students' },
+        { to: '/dashboard/instructor?tab=overview', label: 'Dashboard' },
+        { to: '/dashboard/instructor?tab=exams', label: 'Manage Exams' },
+        { to: '/dashboard/instructor?tab=students', label: 'Students' },
     ];
 
     const navLinks = user?.role === 'admin'
@@ -164,13 +164,9 @@ const Header = () => {
                                         </div>
                                     </div>
                                     <div className={styles.dropdownDivider}></div>
-                                    <Link to="/profile" className={styles.dropdownItem} onClick={() => setDropdownOpen(false)}>
+                                    <Link to="/dashboard/student?tab=overview" className={styles.dropdownItem} onClick={() => setDropdownOpen(false)}>
                                         <i className="fas fa-user-circle"></i>
                                         My Profile
-                                    </Link>
-                                    <Link to="/settings" className={styles.dropdownItem} onClick={() => setDropdownOpen(false)}>
-                                        <i className="fas fa-cog"></i>
-                                        Settings
                                     </Link>
                                     <div className={styles.dropdownDivider}></div>
                                     <button className={styles.dropdownItem} onClick={handleLogout}>
