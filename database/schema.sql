@@ -1,3 +1,7 @@
+-- =====================================================
+-- DATABASE INITIALIZATION
+-- =====================================================
+
 DROP DATABASE IF EXISTS online_examination_system_db;
 CREATE DATABASE online_examination_system_db;
 USE online_examination_system_db;
@@ -131,6 +135,10 @@ CREATE TABLE student_answers (
     UNIQUE KEY unique_attempt_question (attempt_id, question_id)
 );
 
+-- =====================================================
+-- DATABASE INSERT QUERIES
+-- =====================================================
+
 INSERT INTO users (first_name, last_name, email, password_hash, role) VALUES
 ('Ahmed', 'Hassan', 'ahmed.hassan@student.edu', 'hash123', 'student'),
 ('Sara', 'Mahmoud', 'sara.mahmoud@student.edu', 'hash456', 'student'),
@@ -213,3 +221,341 @@ INSERT INTO student_answers (attempt_id, question_id, given_answer, marks_obtain
 (4, 9, 'Unique identifier for table records', 8),
 (5, 8, 'SELECT', 5),
 (5, 9, 'Key that identifies a row', 7);
+
+
+-- =====================================================
+-- SQL Queries (CRUD Operations)
+-- =====================================================
+
+-- =====================================================
+-- CREATE (INSERT) - Adding new records
+-- =====================================================
+
+-- Insert a new user
+INSERT INTO users (first_name, last_name, email, password_hash, role) 
+VALUES ('John', 'Doe', 'john.doe@student.edu', 'hash123', 'student');
+
+-- Insert a new course
+INSERT INTO courses (course_code, course_name, description, credit_hours) 
+VALUES ('CS202', 'Web Development', 'Learn HTML, CSS, JavaScript', 3);
+
+-- Insert a new exam
+INSERT INTO exams (title, description, duration_minutes, total_marks, passing_marks, start_time, end_time, course_id, instructor_id) 
+VALUES ('JavaScript Quiz', 'Basic JavaScript concepts', 60, 100, 50, '2026-05-01 10:00:00', '2026-05-01 11:00:00', 1, 1);
+
+-- Enroll a student in an exam
+INSERT INTO exam_enrollments (exam_id, student_id) 
+VALUES (1, 1);
+
+-- =====================================================
+-- READ (SELECT) - Retrieval queries
+-- =====================================================
+
+-- Get all users
+SELECT * FROM users;
+
+-- Get all students
+SELECT * FROM students;
+
+-- Get all exams
+SELECT * FROM exams;
+
+-- Get a specific user by email
+SELECT * FROM users WHERE email = 'ahmed.hassan@student.edu';
+
+-- Get all exams for a specific course
+SELECT * FROM exams WHERE course_id = 1;
+
+-- Get all questions for a specific exam
+SELECT * FROM questions WHERE exam_id = 1;
+
+-- Get student exam attempts
+SELECT * FROM exam_attempts WHERE student_id = 1;
+
+-- Get passed exams only
+SELECT * FROM exam_attempts WHERE score >= 60;
+
+-- =====================================================
+-- UPDATE - Modifying existing records
+-- =====================================================
+
+-- Update user's last name
+UPDATE users 
+SET last_name = 'Smith' 
+WHERE user_id = 1;
+
+-- Update student's phone number
+UPDATE students 
+SET phone = '01123456789' 
+WHERE student_id = 1;
+
+-- Update exam passing marks
+UPDATE exams 
+SET passing_marks = 65 
+WHERE exam_id = 1;
+
+-- Mark exam as published
+UPDATE exams 
+SET is_published = TRUE 
+WHERE exam_id = 1;
+
+-- Update a question's marks
+UPDATE questions 
+SET marks = 5 
+WHERE question_id = 1;
+
+-- =====================================================
+-- DELETE - Removing records
+-- =====================================================
+
+-- Delete a specific exam enrollment
+DELETE FROM exam_enrollments 
+WHERE exam_id = 4 AND student_id = 2;
+
+-- Delete a specific question
+DELETE FROM questions 
+WHERE question_id = 9;
+
+-- Delete an exam attempt
+DELETE FROM exam_attempts 
+WHERE attempt_id = 4;
+
+-- =====================================================
+-- BASIC AGGREGATION (Simple calculations)
+-- =====================================================
+
+-- Count total number of students
+SELECT COUNT(*) AS total_students FROM students;
+
+-- Average score of all exam attempts
+SELECT AVG(score) AS average_score FROM exam_attempts;
+
+-- Highest score in an exam
+SELECT MAX(score) AS highest_score FROM exam_attempts WHERE exam_id = 1;
+
+-- Total marks for an exam
+SELECT SUM(marks) AS total_marks FROM questions WHERE exam_id = 1;
+
+-- Count how many exams each student took
+SELECT student_id, COUNT(*) AS exams_taken 
+FROM exam_attempts 
+GROUP BY student_id;
+
+-- =====================================================
+-- INNER, LEFT, and RIGHT JOINS
+-- =====================================================
+
+-- =====================================================
+-- INNER JOIN - Get matching records from both tables
+-- =====================================================
+
+-- INNER JOIN: Get students with their user details (only matching records)
+SELECT s.student_id, u.first_name, u.last_name, s.phone, s.enrollment_date
+FROM students s
+INNER JOIN users u ON s.user_id = u.user_id;
+
+-- INNER JOIN: Get exams with their course names
+SELECT e.exam_id, e.title, c.course_name, e.start_time
+FROM exams e
+INNER JOIN courses c ON e.course_id = c.course_id;
+
+-- INNER JOIN: Get exam attempts with student names
+SELECT ea.attempt_id, u.first_name, u.last_name, ea.score, ea.start_time
+FROM exam_attempts ea
+INNER JOIN students s ON ea.student_id = s.student_id
+INNER JOIN users u ON s.user_id = u.user_id;
+
+-- INNER JOIN: Get questions with their exam titles
+SELECT q.question_id, q.question_text, e.title AS exam_title, q.marks
+FROM questions q
+INNER JOIN exams e ON q.exam_id = e.exam_id;
+
+-- INNER JOIN: Get student answers with question text and exam title
+SELECT sa.answer_id, u.first_name, q.question_text, sa.given_answer, sa.marks_obtained
+FROM student_answers sa
+INNER JOIN exam_attempts ea ON sa.attempt_id = ea.attempt_id
+INNER JOIN students s ON ea.student_id = s.student_id
+INNER JOIN users u ON s.user_id = u.user_id
+INNER JOIN questions q ON sa.question_id = q.question_id;
+
+-- =====================================================
+-- LEFT JOIN - Get ALL records from left table, matching from right
+-- =====================================================
+
+-- LEFT JOIN: All courses, even those without exams
+SELECT c.course_code, c.course_name, e.title AS exam_title
+FROM courses c
+LEFT JOIN exams e ON c.course_id = e.course_id;
+
+-- LEFT JOIN: All students, even those without exam attempts
+SELECT u.first_name, u.last_name, ea.attempt_id, ea.score
+FROM students s
+LEFT JOIN exam_attempts ea ON s.student_id = ea.student_id
+LEFT JOIN users u ON s.user_id = u.user_id;
+
+-- LEFT JOIN: All users, even those who are not students
+SELECT u.user_id, u.first_name, u.last_name, u.role, s.student_id
+FROM users u
+LEFT JOIN students s ON u.user_id = s.user_id;
+
+-- LEFT JOIN: All instructors, even those without courses assigned
+SELECT CONCAT(u.first_name, ' ', u.last_name) AS instructor_name, 
+       ci.course_id, c.course_code
+FROM instructors i
+LEFT JOIN users u ON i.user_id = u.user_id
+LEFT JOIN course_instructors ci ON i.instructor_id = ci.instructor_id
+LEFT JOIN courses c ON ci.course_id = c.course_id;
+
+-- LEFT JOIN: All exams, even those with no student enrollments
+SELECT e.title, e.start_time, COUNT(ee.student_id) AS enrolled_students
+FROM exams e
+LEFT JOIN exam_enrollments ee ON e.exam_id = ee.exam_id
+GROUP BY e.exam_id, e.title, e.start_time;
+
+-- =====================================================
+-- RIGHT JOIN - Get ALL records from right table, matching from left
+-- =====================================================
+
+-- RIGHT JOIN: All exams, even if they don't belong to a course (rare)
+SELECT e.title, c.course_name
+FROM courses c
+RIGHT JOIN exams e ON c.course_id = e.course_id;
+
+-- RIGHT JOIN: All users, even if they are not instructors
+SELECT u.first_name, u.last_name, i.instructor_id, i.department
+FROM instructors i
+RIGHT JOIN users u ON i.user_id = u.user_id;
+
+-- RIGHT JOIN: All courses, even if no instructor assigned
+SELECT c.course_code, c.course_name, CONCAT(u.first_name, ' ', u.last_name) AS instructor_name
+FROM instructors i
+RIGHT JOIN course_instructors ci ON i.instructor_id = ci.instructor_id
+RIGHT JOIN courses c ON ci.course_id = c.course_id
+LEFT JOIN users u ON i.user_id = u.user_id;
+
+-- RIGHT JOIN: All students, even if they have no exam enrollments
+SELECT u.first_name, u.last_name, ee.exam_id, e.title
+FROM exam_enrollments ee
+RIGHT JOIN students s ON ee.student_id = s.student_id
+RIGHT JOIN users u ON s.user_id = u.user_id
+LEFT JOIN exams e ON ee.exam_id = e.exam_id;
+
+-- =====================================================
+-- COMPARISON EXAMPLES
+-- =====================================================
+
+-- EXAMPLE 1: See what INNER JOIN vs LEFT JOIN returns
+
+-- INNER JOIN: Only courses WITH exams
+SELECT c.course_name, e.title
+FROM courses c
+INNER JOIN exams e ON c.course_id = e.course_id;
+
+-- LEFT JOIN: ALL courses, even those WITHOUT exams
+SELECT c.course_name, e.title
+FROM courses c
+LEFT JOIN exams e ON c.course_id = e.course_id;
+
+-- EXAMPLE 2: Students with attempts vs All students
+
+-- INNER JOIN: Only students who HAVE taken exams
+SELECT DISTINCT u.first_name, u.last_name
+FROM students s
+INNER JOIN exam_attempts ea ON s.student_id = ea.student_id
+INNER JOIN users u ON s.user_id = u.user_id;
+
+-- LEFT JOIN: ALL students, even those who NEVER took an exam
+SELECT u.first_name, u.last_name, ea.attempt_id
+FROM students s
+LEFT JOIN exam_attempts ea ON s.student_id = ea.student_id
+LEFT JOIN users u ON s.user_id = u.user_id;
+
+-- =====================================================
+-- REAL EXAMPLES WITH NULL VALUES
+-- =====================================================
+
+-- Find courses with no exams (using LEFT JOIN with WHERE NULL)
+SELECT c.course_code, c.course_name
+FROM courses c
+LEFT JOIN exams e ON c.course_id = e.course_id
+WHERE e.exam_id IS NULL;
+
+-- Find students who never attempted any exam
+SELECT u.first_name, u.last_name
+FROM students s
+LEFT JOIN exam_attempts ea ON s.student_id = ea.student_id
+LEFT JOIN users u ON s.user_id = u.user_id
+WHERE ea.attempt_id IS NULL;
+
+-- Find exams with no student enrollments
+SELECT e.title, e.start_time
+FROM exams e
+LEFT JOIN exam_enrollments ee ON e.exam_id = ee.exam_id
+WHERE ee.student_id IS NULL;
+
+-- =====================================================
+-- ORDER BY
+-- =====================================================
+
+-- Sort users by name (A to Z)
+SELECT * FROM users ORDER BY first_name ASC;
+
+-- Sort exams by date (newest first)
+SELECT * FROM exams ORDER BY start_time DESC;
+
+-- Sort students by highest score
+SELECT student_id, score FROM exam_attempts ORDER BY score DESC;
+
+-- Sort courses by credit hours (smallest to largest)
+SELECT * FROM courses ORDER BY credit_hours ASC;
+
+-- =====================================================
+-- BASIC FILTERING (WHERE clause)
+-- =====================================================
+
+-- Get active users only
+SELECT * FROM users WHERE is_active = TRUE;
+
+-- Get exams longer than 60 minutes
+SELECT * FROM exams WHERE duration_minutes > 60;
+
+-- Get students who failed an exam
+SELECT * FROM exam_attempts WHERE score < 60;
+
+-- Get exams happening today
+SELECT * FROM exams WHERE DATE(start_time) = CURDATE();
+
+-- Get questions that are multiple choice
+SELECT * FROM questions WHERE question_type = 'MCQ';
+
+-- =====================================================
+-- BASIC GROUP BY
+-- =====================================================
+
+-- Count exams by type
+SELECT question_type, COUNT(*) FROM questions GROUP BY question_type;
+
+-- Average score by exam
+SELECT exam_id, AVG(score) FROM exam_attempts GROUP BY exam_id;
+
+-- Count students by city
+SELECT address_city, COUNT(*) FROM students GROUP BY address_city;
+
+-- Total marks by question type
+SELECT question_type, SUM(marks) FROM questions GROUP BY question_type;
+
+-- =====================================================
+-- SIMPLE DELETE WITH CONDITIONS
+-- =====================================================
+
+-- Delete old exam attempts (older than 1 year)
+DELETE FROM exam_attempts 
+WHERE start_time < DATE_SUB(NOW(), INTERVAL 1 YEAR);
+
+-- Delete inactive users
+DELETE FROM users 
+WHERE is_active = FALSE AND created_at < DATE_SUB(NOW(), INTERVAL 30 DAY);
+
+-- Delete unenrolled exam attempts
+DELETE FROM exam_attempts 
+WHERE exam_id NOT IN (SELECT exam_id FROM exam_enrollments);
