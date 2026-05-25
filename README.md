@@ -94,6 +94,7 @@ client/
 │   │   ├── layout/
 │   │   │   └── MainLayout.jsx
 │   │   └── styles/
+│   │       ├── Admin.module.css
 │   │       ├── Auth.module.css
 │   │       ├── Dashboard.module.css
 │   │       ├── Footer.module.css
