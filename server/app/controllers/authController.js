@@ -1,8 +1,8 @@
 import bcrypt from "bcrypt";
-import User from "../models/User.js";
-import Student from "../models/Student.js";
-import Instructor from "../models/Instructor.js";
-import Admin from "../models/Admin.js";
+import { UserModel } from "../models/User.js";
+import { StudentModel } from "../models/Student.js";
+import { InstructorModel } from "../models/Instructor.js";
+import { AdminModel } from "../models/Admin.js";
 import { generateTokens } from "../../utils/jwt.js";
 import { setAuthCookies } from "../../utils/cookieHelper.js";
 
@@ -12,7 +12,7 @@ export const authController = {
             const { email, password, first_name, last_name, role } = req.body;
             const userRole = role || "student";
 
-            const existingUser = await User.readUserByEmail(email);
+            const existingUser = await UserModel.readUserByEmail(email);
             if (existingUser) {
                 return res.status(409).json({
                     message: "User with this email already exists",
@@ -22,7 +22,7 @@ export const authController = {
 
             const hashedPassword = await bcrypt.hash(password, 12);
 
-            const userId = await User.create({
+            const userId = await UserModel.create({
                 email,
                 password_hash: hashedPassword,
                 first_name,
@@ -31,20 +31,20 @@ export const authController = {
             });
 
             if (userRole === 'student') {
-                await Student.create({ user_id: userId });
+                await StudentModel.create({ user_id: userId });
             } else if (userRole === 'instructor') {
-                await Instructor.create({ user_id: userId });
+                await InstructorModel.create({ user_id: userId });
             } else if (userRole === 'admin') {
-                await Admin.create({ user_id: userId, access_level: 'full' });
+                await AdminModel.create({ user_id: userId, access_level: 'full' });
             }
 
-            const user = await User.readUserById(userId);
+            const user = await UserModel.readUserById(userId);
 
             const { accessToken, refreshToken } = generateTokens({ user_id: user.user_id, user_role: user.role });
 
             setAuthCookies(res, accessToken, refreshToken);
 
-            await User.updateLastLogin(user.user_id);
+            await UserModel.updateLastLogin(user.user_id);
 
             const { password_hash: _, ...userWithoutPassword } = user;
 
@@ -67,7 +67,7 @@ export const authController = {
         try {
             const { email, password } = req.body;
 
-            const user = await User.readUserByEmail(email);
+            const user = await UserModel.readUserByEmail(email);
             if (!user) {
                 return res.status(401).json({
                     message: "Invalid email or password",
@@ -94,7 +94,7 @@ export const authController = {
 
             setAuthCookies(res, accessToken, refreshToken);
 
-            await User.updateLastLogin(user.user_id);
+            await UserModel.updateLastLogin(user.user_id);
 
             const { password_hash: _, ...userWithoutPassword } = user;
 
@@ -141,7 +141,7 @@ export const authController = {
 
     getCurrentUser: async (req, res) => {
         try {
-            const user = await User.readUserById(req.user.user_id);
+            const user = await UserModel.readUserById(req.user.user_id);
             if (!user) {
                 return res.status(404).json({
                     message: "User not found",
@@ -181,7 +181,7 @@ export const authController = {
                 });
             }
 
-            const affectedRows = await User.update(userId, updates);
+            const affectedRows = await UserModel.update(userId, updates);
             if (affectedRows === 0) {
                 return res.status(404).json({
                     message: "User not found",
@@ -189,7 +189,7 @@ export const authController = {
                 });
             }
 
-            const updatedUser = await User.readUserById(userId);
+            const updatedUser = await UserModel.readUserById(userId);
             const { password_hash: _, ...userWithoutPassword } = updatedUser;
 
             return res.status(200).json({
@@ -211,7 +211,7 @@ export const authController = {
             const { current_password, new_password } = req.body;
             const userId = req.user.user_id;
 
-            const user = await User.readUserById(userId);
+            const user = await UserModel.readUserById(userId);
             if (!user) {
                 return res.status(404).json({
                     message: "User not found",
@@ -219,7 +219,7 @@ export const authController = {
                 });
             }
 
-            const fullUser = await User.readUserByEmail(user.email);
+            const fullUser = await UserModel.readUserByEmail(user.email);
             const isPasswordValid = await bcrypt.compare(current_password, fullUser.password_hash);
             if (!isPasswordValid) {
                 return res.status(401).json({
@@ -229,7 +229,7 @@ export const authController = {
             }
 
             const hashedPassword = await bcrypt.hash(new_password, 12);
-            await User.update(userId, { password_hash: hashedPassword });
+            await UserModel.update(userId, { password_hash: hashedPassword });
 
             return res.status(200).json({
                 message: "Password changed successfully",
@@ -248,7 +248,7 @@ export const authController = {
         try {
             const userId = req.user.user_id;
 
-            const affectedRows = await User.softDelete(userId);
+            const affectedRows = await UserModel.softDelete(userId);
             if (affectedRows === 0) {
                 return res.status(404).json({
                     message: "User not found",

@@ -19,6 +19,20 @@
 </div>
 
 ---
+# Application System Design
+## SUTech System Architecture
+![SUTech System Architecture](./public/system-design/sutech-system-architecture.png)
+*SUTech System Architecture*
+
+## SUTech Auth Flow
+![SUTech Auth Flow](./public/system-design/sutech-auth-flow.png)
+*SUTech Auth Flow*
+
+## API Request/Response Flow
+![API Request/Response Flow](./public/system-design/api-request-response-flow.png)
+*API Request/Response Flow*
+
+---
 # Web System Screenshots
 ## Guest Screens
 ### Guest Dashboard
@@ -282,42 +296,42 @@ http://localhost:PORT/api/v1/
 
 ## Authentication API
 ```js
-1. Register - (POST) base_url/register
-2. Login - (POST) base_url/login
-3. Get Current User - (GET) base_url/current-user
-4. Update Profile - (PUT) base_url/profile
-5. Change Password - (PUT) base_url/change-password
-6. Logout - (POST) base_url/logout
-7. Login Again - (POST) base_url/login
-8. Deactivate Account - (DELETE) base_url/account
+1. Register - (POST) base_url/auth/register
+2. Login - (POST) base_url/auth/login
+3. Get Current User - (GET) base_url/auth/current-user
+4. Update Profile - (PUT) base_url/auth/profile
+5. Change Password - (PUT) base_url/auth/change-password
+6. Logout - (POST) base_url/auth/logout
+7. Login Again - (POST) base_url/auth/login
+8. Deactivate Account - (DELETE) base_url/auth/account
 ```
 
 ## Student API
 ```js
-1. Get Student Profile - (GET) {{base_url}}/profile
-2. Update Student Profile - (PUT) {{base_url}}/profile
-3. Get Student Enrollments - (GET) {{base_url}}/enrollments
-4. Get Student Exam Attempts - (GET) {{base_url}}/attempts
+1. Get Student Profile - (GET) {{base_url}}/student/profile
+2. Update Student Profile - (PUT) {{base_url}}/student/profile
+3. Get Student Enrollments - (GET) {{base_url}}/student/enrollments
+4. Get Student Exam Attempts - (GET) {{base_url}}/student/attempts
 ```
 
 ## Instructor API
 ```js
-1. Get Instructor Profile - GET {{base_url}}/profile
-2. Update Instructor Profile - (PUT) {{base_url}}/profile
-3. Get Instructor Courses - (GET) {{base_url}}/courses
-4. Get Instructor Exams - (GET) {{base_url}}/exams
+1. Get Instructor Profile - GET {{base_url}}/instructor/profile
+2. Update Instructor Profile - (PUT) {{base_url}}/instructor/profile
+3. Get Instructor Courses - (GET) {{base_url}}/instructor/courses
+4. Get Instructor Exams - (GET) {{base_url}}/instructor/exams
 ```
 
 ## Admin API
 ```js
-1. Get Admin Profile - (GET) {{base_url}}/profile
-2. Get System Statistics - (GET) {{base_url}}/stats
-3. Get All Users - (GET) {{base_url}}/users
-4. Get All Students - (GET) {{base_url}}/students
-5. Get All Instructors - (GET) {{base_url}}/instructors
-6. Get All Admins - (GET) {{base_url}}/admins
-7. Update User - (PUT) {{base_url}}/users/:id
-8. Delete User - (DELETE) {{base_url}}/users/:id
+1. Get Admin Profile - (GET) {{base_url}}/admin/profile
+2. Get System Statistics - (GET) {{base_url}}/admin/stats
+3. Get All Users - (GET) {{base_url}}/admin/users
+4. Get All Students - (GET) {{base_url}}/admin/students
+5. Get All Instructors - (GET) {{base_url}}/admin/instructors
+6. Get All Admins - (GET) {{base_url}}/admin/admins
+7. Update User - (PUT) {{base_url}}/admin/users/:id
+8. Delete User - (DELETE) {{base_url}}/admin/users/:id
 ```
 
 ---

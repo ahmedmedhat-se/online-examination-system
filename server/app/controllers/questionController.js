@@ -1,10 +1,10 @@
-import Question from "../models/Question.js";
+import { QuestionModel } from "../models/Question.js";
 
 export const questionController = {
     create: async (req, res) => {
         try {
-            const questionId = await Question.create(req.body);
-            const question = await Question.readById(questionId);
+            const questionId = await QuestionModel.create(req.body);
+            const question = await QuestionModel.readById(questionId);
             return res.status(201).json({ success: true, message: "Question created", data: { question } });
         } catch (error) {
             console.error(`Question creation error: ${error.message}`);
@@ -14,7 +14,7 @@ export const questionController = {
 
     getByExamId: async (req, res) => {
         try {
-            const questions = await Question.readByExamId(req.params.examId);
+            const questions = await QuestionModel.readByExamId(req.params.examId);
             return res.status(200).json({ success: true, data: { questions } });
         } catch (error) {
             console.error(`Get questions error: ${error.message}`);
@@ -24,7 +24,7 @@ export const questionController = {
 
     getById: async (req, res) => {
         try {
-            const question = await Question.readById(req.params.id);
+            const question = await QuestionModel.readById(req.params.id);
             if (!question) return res.status(404).json({ success: false, message: "Question not found" });
             return res.status(200).json({ success: true, data: { question } });
         } catch (error) {
@@ -35,9 +35,9 @@ export const questionController = {
 
     update: async (req, res) => {
         try {
-            const affected = await Question.update(req.params.id, req.body);
+            const affected = await QuestionModel.update(req.params.id, req.body);
             if (!affected) return res.status(404).json({ success: false, message: "Question not found" });
-            const question = await Question.readById(req.params.id);
+            const question = await QuestionModel.readById(req.params.id);
             return res.status(200).json({ success: true, message: "Question updated", data: { question } });
         } catch (error) {
             console.error(`Update question error: ${error.message}`);
@@ -47,7 +47,7 @@ export const questionController = {
 
     delete: async (req, res) => {
         try {
-            const affected = await Question.delete(req.params.id);
+            const affected = await QuestionModel.delete(req.params.id);
             if (!affected) return res.status(404).json({ success: false, message: "Question not found" });
             return res.status(200).json({ success: true, message: "Question deleted" });
         } catch (error) {
