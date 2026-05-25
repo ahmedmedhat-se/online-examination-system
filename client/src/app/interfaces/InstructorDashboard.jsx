@@ -45,8 +45,8 @@ function InstructorDashboard() {
         abortRef.current = new AbortController();
         try {
             const [examsRes, coursesRes] = await Promise.all([
-                apiClient.get('/api/instructor/exams', { signal: abortRef.current.signal }),
-                apiClient.get('/api/instructor/courses', { signal: abortRef.current.signal }),
+                apiClient.get('/api/v1/instructor/exams', { signal: abortRef.current.signal }),
+                apiClient.get('/api/v1/instructor/courses', { signal: abortRef.current.signal }),
             ]);
             const examsData = examsRes.data.success ? examsRes.data.data.exams || [] : [];
             const coursesData = coursesRes.data.success ? coursesRes.data.data.courses || [] : [];
@@ -70,7 +70,7 @@ function InstructorDashboard() {
         if (!examId) return;
         setLoading(true);
         try {
-            const response = await apiClient.get(`/api/exams/${examId}/students`);
+            const response = await apiClient.get(`/api/v1/exams/${examId}/students`);
             if (response.data.success) {
                 setStudents(response.data.data.students || []);
                 setShowStudentList(true);
@@ -86,7 +86,7 @@ function InstructorDashboard() {
         if (!examId) return;
         setLoading(true);
         try {
-            const response = await apiClient.get(`/api/questions/exam/${examId}`);
+            const response = await apiClient.get(`/api/v1/questions/exam/${examId}`);
             if (response.data.success) {
                 setQuestions(response.data.data.questions || []);
                 setSelectedExam(exams.find(e => e.exam_id === parseInt(examId)) || null);
@@ -113,7 +113,7 @@ function InstructorDashboard() {
                 course_id: examForm.course_id ? parseInt(examForm.course_id) : null,
                 is_published: examForm.is_published,
             };
-            await apiClient.post('/api/exams', payload);
+            await apiClient.post('/api/v1/exams', payload);
             setSuccess('Exam created successfully!');
             setShowExamModal(false);
             setExamForm({ ...INITIAL_EXAM_FORM });
@@ -143,7 +143,7 @@ function InstructorDashboard() {
                 course_id: examForm.course_id ? parseInt(examForm.course_id) : null,
                 is_published: examForm.is_published,
             };
-            await apiClient.put(`/api/exams/${editingExam.exam_id}`, payload);
+            await apiClient.put(`/api/v1/exams/${editingExam.exam_id}`, payload);
             setSuccess('Exam updated successfully!');
             setShowExamModal(false);
             setExamForm({ ...INITIAL_EXAM_FORM });
@@ -161,7 +161,7 @@ function InstructorDashboard() {
         if (!window.confirm('Delete this exam and all its questions? This cannot be undone.')) return;
         setLoading(true);
         try {
-            await apiClient.delete(`/api/exams/${examId}`);
+            await apiClient.delete(`/api/v1/exams/${examId}`);
             setSuccess('Exam deleted successfully');
             if (selectedExam?.exam_id === examId) { setSelectedExam(null); setQuestions([]); }
             fetchData();
@@ -187,7 +187,7 @@ function InstructorDashboard() {
                 marks: Math.max(1, Math.min(100, parseInt(questionForm.marks) || 1)),
                 question_order: questions.length + 1,
             };
-            await apiClient.post('/api/questions', payload);
+            await apiClient.post('/api/v1/questions', payload);
             setSuccess('Question added successfully!');
             setShowQuestionModal(false);
             setQuestionForm({ ...INITIAL_QUESTION_FORM });
@@ -214,7 +214,7 @@ function InstructorDashboard() {
                 marks: Math.max(1, Math.min(100, parseInt(questionForm.marks) || 1)),
                 question_order: editingQuestion.question_order,
             };
-            await apiClient.put(`/api/questions/${editingQuestion.question_id}`, payload);
+            await apiClient.put(`/api/v1/questions/${editingQuestion.question_id}`, payload);
             setSuccess('Question updated successfully!');
             setShowQuestionModal(false);
             setQuestionForm({ ...INITIAL_QUESTION_FORM });
@@ -232,7 +232,7 @@ function InstructorDashboard() {
         if (!window.confirm('Delete this question?')) return;
         setLoading(true);
         try {
-            await apiClient.delete(`/api/questions/${questionId}`);
+            await apiClient.delete(`/api/v1/questions/${questionId}`);
             setSuccess('Question deleted successfully');
             fetchQuestions(selectedExam.exam_id);
         } catch (err) {

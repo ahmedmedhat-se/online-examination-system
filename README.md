@@ -120,7 +120,6 @@ client/
 database/
 ├── .gitignore
 ├── .txt
-├── online-examination-system_erd.pdf
 ├── online-examination-system-erd.png
 ├── online-examination-system-erd.drawio.png
 └── schema.sql
@@ -156,7 +155,9 @@ server/
 │   └── validations/
 │       └── authValidation.js
 ├── config/
-│   └── database.js
+│   └── env.js
+├── database/
+│   └── mysql.js
 ├── node_modules/
 ├── tests/
 │   └── test-connection.test.js

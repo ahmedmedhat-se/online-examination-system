@@ -24,7 +24,7 @@ function CourseManagement() {
         if (abortRef.current) abortRef.current.abort();
         abortRef.current = new AbortController();
         try {
-            const res = await apiClient.get('/api/courses', { signal: abortRef.current.signal });
+            const res = await apiClient.get('/api/v1/courses', { signal: abortRef.current.signal });
             if (res.data.success) setCourses(res.data.data.courses);
         } catch (err) {
             if (err.name === 'CanceledError' || err.code === 'ERR_CANCELED') return;
@@ -60,7 +60,7 @@ function CourseManagement() {
                 description: form.description.trim().slice(0, 500) || null,
                 credit_hours: Math.max(1, Math.min(6, parseInt(form.credit_hours) || 3)),
             };
-            const res = await apiClient.post('/api/courses', payload);
+            const res = await apiClient.post('/api/v1/courses', payload);
             if (res.data.success) {
                 setCourses(prev => [...prev, res.data.data.course]);
                 setShowForm(false);
@@ -76,7 +76,7 @@ function CourseManagement() {
     const deleteCourse = async (courseId) => {
         if (!window.confirm('Delete this course? All associated exams will also be deleted.')) return;
         try {
-            await apiClient.delete(`/api/courses/${courseId}`);
+            await apiClient.delete(`/api/v1/courses/${courseId}`);
             setCourses(prev => prev.filter(c => c.course_id !== courseId));
         } catch {
             setError('Delete failed.');

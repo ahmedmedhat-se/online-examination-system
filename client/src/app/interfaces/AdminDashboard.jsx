@@ -22,7 +22,7 @@ function AdminDashboard() {
         if (abortRef.current) abortRef.current.abort();
         abortRef.current = new AbortController();
         try {
-            const res = await apiClient.get('/api/admin/stats', { signal: abortRef.current.signal });
+            const res = await apiClient.get('/api/v1/admin/stats', { signal: abortRef.current.signal });
             if (res.data.success) setStats(res.data.data.stats);
         } catch (err) {
             if (err.name === 'CanceledError' || err.code === 'ERR_CANCELED') return;

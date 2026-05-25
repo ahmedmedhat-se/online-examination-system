@@ -225,7 +225,7 @@ function Auth() {
             };
 
         try {
-            const endpoint = isRegister ? '/api/auth/register' : '/api/auth/login';
+            const endpoint = isRegister ? '/api/v1/auth/register' : '/api/v1/auth/login';
 
             const response = await apiClient.post(endpoint, payload, {
                 signal: abortControllerRef.current?.signal,

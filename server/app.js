@@ -1,3 +1,4 @@
+// Importing Dependencies
 import express from "express";
 import dotenv from "dotenv";
 import helmet from "helmet";
@@ -5,15 +6,17 @@ import morgan from "morgan";
 import cookieParser from "cookie-parser";
 import cors from "cors";
 import rateLimit from "express-rate-limit";
-import { authRouter } from "./apis/authRoutes.js";
-import { studentRouter } from "./apis/studentRoutes.js";
-import { instructorRouter } from "./apis/instructorRoutes.js";
-import { adminRouter } from "./apis/adminRoutes.js";
-import { courseRouter } from "./apis/courseRoutes.js";
-import { categoryRouter } from "./apis/categoryRoutes.js";
-import { examRouter } from "./apis/examRoutes.js";
-import { questionRouter } from "./apis/questionRoutes.js";
-import { examAttemptRouter } from "./apis/examAttemptRoutes.js";
+
+// Importing API Routers
+import { authRouter } from "./apis/auth.routes.js";
+import { studentRouter } from "./apis/student.routes.js";
+import { instructorRouter } from "./apis/instructor.routes.js";
+import { adminRouter } from "./apis/admin.routes.js";
+import { courseRouter } from "./apis/course.routes.js";
+import { categoryRouter } from "./apis/category.routes.js";
+import { examRouter } from "./apis/exam.routes.js";
+import { questionRouter } from "./apis/question.routes.js";
+import { examAttemptRouter } from "./apis/exam-attempt.routes.js";
 
 dotenv.config();
 
@@ -29,6 +32,7 @@ process.on("unhandledRejection", (reason) => {
 const app = express();
 const PORT = process.env.PORT || 8080;
 
+// Global Application Middleware
 app.use(cors({
   origin: process.env.FRONTEND_URL || "http://localhost:5000",
   credentials: true,
@@ -53,6 +57,7 @@ app.use(helmet({
 }));
 app.use(morgan("dev"));
 
+// Application Rate-Limiters
 const createLimiter = (windowMs, max, message) =>
   rateLimit({
     windowMs,
@@ -78,16 +83,18 @@ const generalLimiter = createLimiter(
   "Too many requests. Please try again in 15 minutes."
 );
 
-app.use("/api/auth", authLimiter, authRouter);
-app.use("/api/student", generalLimiter, studentRouter);
-app.use("/api/instructor", generalLimiter, instructorRouter);
-app.use("/api/admin", generalLimiter, adminRouter);
-app.use("/api/courses", generalLimiter, courseRouter);
-app.use("/api/categories", generalLimiter, categoryRouter);
-app.use("/api/exams", generalLimiter, examRouter);
-app.use("/api/questions", generalLimiter, questionRouter);
-app.use("/api/attempts", generalLimiter, examAttemptRouter);
+// APIs
+app.use("/api/v1/auth", authLimiter, authRouter);
+app.use("/api/v1/student", generalLimiter, studentRouter);
+app.use("/api/v1/instructor", generalLimiter, instructorRouter);
+app.use("/api/v1/admin", generalLimiter, adminRouter);
+app.use("/api/v1/courses", generalLimiter, courseRouter);
+app.use("/api/v1/categories", generalLimiter, categoryRouter);
+app.use("/api/v1/exams", generalLimiter, examRouter);
+app.use("/api/v1/questions", generalLimiter, questionRouter);
+app.use("/api/v1/attempts", generalLimiter, examAttemptRouter);
 
+// Health Checker
 app.get("/health", (req, res) => {
   res.status(200).json({
     success: true,
@@ -97,6 +104,7 @@ app.get("/health", (req, res) => {
   });
 });
 
+// Global Error Handler
 app.use((err, req, res, next) => {
   console.error("Route Error:", err.message);
   console.error(err.stack);
@@ -106,6 +114,7 @@ app.use((err, req, res, next) => {
   });
 });
 
+// Application Initialization
 app.listen(PORT, () => {
   console.log(`
 - Server is running on: http://localhost:${PORT}

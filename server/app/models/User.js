@@ -1,4 +1,4 @@
-import { db_config } from "../../config/database.js";
+import { db_config } from "../../database/mysql.js"
 
 export const User = {
     create: async (user) => {
@@ -119,6 +119,7 @@ export const User = {
             throw new Error(`Failed to update user: ${error.message}`);
         }
     },
+    
     updateLastLogin: async (user_id) => {
         try {
             const stmt = "UPDATE users SET last_login = CURRENT_TIMESTAMP WHERE user_id = ?";

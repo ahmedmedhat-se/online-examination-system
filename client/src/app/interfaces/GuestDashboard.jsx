@@ -21,7 +21,7 @@ function GuestDashboard() {
     useEffect(() => {
         abortRef.current = new AbortController();
         setLoading(true);
-        apiClient.get('/api/exams', { signal: abortRef.current.signal })
+        apiClient.get('/api/v1/exams', { signal: abortRef.current.signal })
             .then(res => {
                 if (res.data.success) setExams(res.data.data.exams || []);
             })

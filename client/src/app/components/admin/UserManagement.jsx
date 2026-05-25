@@ -33,7 +33,7 @@ function UserManagement({ onStatsChange }) {
         if (abortRef.current) abortRef.current.abort();
         abortRef.current = new AbortController();
         try {
-            const res = await apiClient.get('/api/admin/users', { signal: abortRef.current.signal });
+            const res = await apiClient.get('/api/v1/admin/users', { signal: abortRef.current.signal });
             if (res.data.success) setUsers(res.data.data.users);
         } catch (err) {
             if (err.name === 'CanceledError' || err.code === 'ERR_CANCELED') return;
@@ -74,7 +74,7 @@ function UserManagement({ onStatsChange }) {
     const toggleStatus = useCallback(async (userId, currentStatus) => {
         setActionLoading(userId);
         try {
-            await apiClient.put(`/api/admin/users/${userId}`, { is_active: !currentStatus });
+            await apiClient.put(`/api/v1/admin/users/${userId}`, { is_active: !currentStatus });
             setUsers(prev => prev.map(u => u.user_id === userId ? { ...u, is_active: !currentStatus } : u));
         } catch {
             setError('Action failed.');
@@ -88,7 +88,7 @@ function UserManagement({ onStatsChange }) {
         if (!window.confirm('Permanently delete this user? This cannot be undone.')) return;
         setActionLoading(userId);
         try {
-            await apiClient.delete(`/api/admin/users/${userId}`);
+            await apiClient.delete(`/api/v1/admin/users/${userId}`);
             setUsers(prev => prev.filter(u => u.user_id !== userId));
         } catch {
             setError('Delete failed.');
@@ -111,7 +111,7 @@ function UserManagement({ onStatsChange }) {
     const saveEdit = async (userId) => {
         setActionLoading(userId);
         try {
-            await apiClient.put(`/api/admin/users/${userId}`, editForm);
+            await apiClient.put(`/api/v1/admin/users/${userId}`, editForm);
             setUsers(prev => prev.map(u => u.user_id === userId ? { ...u, ...editForm } : u));
             cancelEdit();
         } catch {
@@ -125,7 +125,7 @@ function UserManagement({ onStatsChange }) {
         e.preventDefault();
         setAddSubmitting(true);
         try {
-            await apiClient.post('/api/auth/register', addForm);
+            await apiClient.post('/api/v1/auth/register', addForm);
             setShowAddForm(false);
             setAddForm({ first_name: '', last_name: '', email: '', password: '', role: 'student' });
             fetchUsers();

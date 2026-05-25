@@ -21,9 +21,9 @@ function StudentDashboard() {
 
         try {
             const [profileRes, enrollmentsRes, attemptsRes] = await Promise.all([
-                apiClient.get('/api/student/profile', { signal: abortRef.current.signal }),
-                apiClient.get('/api/student/enrollments', { signal: abortRef.current.signal }),
-                apiClient.get('/api/student/attempts', { signal: abortRef.current.signal }),
+                apiClient.get('/api/v1/student/profile', { signal: abortRef.current.signal }),
+                apiClient.get('/api/v1/student/enrollments', { signal: abortRef.current.signal }),
+                apiClient.get('/api/v1/student/attempts', { signal: abortRef.current.signal }),
             ]);
 
             if (profileRes.data.success) setProfile(profileRes.data.data.student);
@@ -128,7 +128,7 @@ function StudentDashboard() {
             <div className={styles.section}>
                 <div className={styles.sectionHeader}>
                     <h2 className={styles.sectionTitle}>Upcoming Exams</h2>
-                    <Link to="/exams" className={styles.sectionLink}>
+                    <Link to="/dashboard/student?tab=exams" className={styles.sectionLink}>
                         View All <FontAwesomeIcon icon={faArrowRight} />
                     </Link>
                 </div>
@@ -167,7 +167,7 @@ function StudentDashboard() {
             <div className={styles.section}>
                 <div className={styles.sectionHeader}>
                     <h2 className={styles.sectionTitle}>Recent Results</h2>
-                    <Link to="/results" className={styles.sectionLink}>
+                    <Link to="/dashboard/student?tab=results" className={styles.sectionLink}>
                         View All <FontAwesomeIcon icon={faArrowRight} />
                     </Link>
                 </div>

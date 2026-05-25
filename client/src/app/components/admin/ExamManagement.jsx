@@ -30,7 +30,7 @@ function ExamManagement() {
         if (abortRef.current) abortRef.current.abort();
         abortRef.current = new AbortController();
         try {
-            const res = await apiClient.get('/api/exams', { signal: abortRef.current.signal });
+            const res = await apiClient.get('/api/v1/exams', { signal: abortRef.current.signal });
             if (res.data.success) setExams(res.data.data.exams);
         } catch (err) {
             if (err.name === 'CanceledError' || err.code === 'ERR_CANCELED') return;
@@ -53,12 +53,12 @@ function ExamManagement() {
 
         fetchExams();
 
-        apiClient.get('/api/courses').then(res => {
+        apiClient.get('/api/v1/courses').then(res => {
             if (res.data.success) setCourses(res.data.data.courses);
         }).catch(() => {});
 
         if (role === 'admin') {
-            apiClient.get('/api/admin/instructors').then(res => {
+            apiClient.get('/api/v1/admin/instructors').then(res => {
                 if (res.data.success) setInstructors(res.data.data.instructors);
             }).catch(() => {});
         }
@@ -78,7 +78,7 @@ function ExamManagement() {
 
     const togglePublish = async (examId, currentStatus) => {
         try {
-            await apiClient.put(`/api/exams/${examId}`, { is_published: !currentStatus });
+            await apiClient.put(`/api/v1/exams/${examId}`, { is_published: !currentStatus });
             setExams(prev => prev.map(e => e.exam_id === examId ? { ...e, is_published: !currentStatus } : e));
         } catch {
             setError('Action failed.');
@@ -88,7 +88,7 @@ function ExamManagement() {
     const deleteExam = async (examId) => {
         if (!window.confirm('Delete this exam and all its questions?')) return;
         try {
-            await apiClient.delete(`/api/exams/${examId}`);
+            await apiClient.delete(`/api/v1/exams/${examId}`);
             setExams(prev => prev.filter(e => e.exam_id !== examId));
         } catch {
             setError('Delete failed.');
@@ -111,7 +111,7 @@ function ExamManagement() {
                 is_published: form.is_published,
                 instructor_id: userRole === 'admin' && form.instructor_id ? parseInt(form.instructor_id) : undefined,
             };
-            const res = await apiClient.post('/api/exams', payload);
+            const res = await apiClient.post('/api/v1/exams', payload);
             if (res.data.success) {
                 setExams(prev => [...prev, res.data.data.exam]);
                 setShowAdd(false);

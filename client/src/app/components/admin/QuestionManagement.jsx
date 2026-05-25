@@ -27,7 +27,7 @@ function QuestionManagement({ examId, onClose }) {
         if (abortRef.current) abortRef.current.abort();
         abortRef.current = new AbortController();
         try {
-            const res = await apiClient.get(`/api/questions/exam/${examId}`, { signal: abortRef.current.signal });
+            const res = await apiClient.get(`/api/v1/questions/exam/${examId}`, { signal: abortRef.current.signal });
             if (res.data.success) setQuestions(res.data.data.questions);
         } catch (err) {
             if (err.name === 'CanceledError' || err.code === 'ERR_CANCELED') return;
@@ -66,7 +66,7 @@ function QuestionManagement({ examId, onClose }) {
                 marks: Math.max(1, Math.min(100, parseInt(form.marks) || 1)),
                 question_order: questions.length + 1,
             };
-            const res = await apiClient.post('/api/questions', payload);
+            const res = await apiClient.post('/api/v1/questions', payload);
             if (res.data.success) {
                 setQuestions(prev => [...prev, res.data.data.question]);
                 setShowForm(false);
@@ -104,7 +104,7 @@ function QuestionManagement({ examId, onClose }) {
                 marks: Math.max(1, Math.min(100, parseInt(editForm.marks) || 1)),
                 question_order: editForm.question_order,
             };
-            await apiClient.put(`/api/questions/${questionId}`, payload);
+            await apiClient.put(`/api/v1/questions/${questionId}`, payload);
             setQuestions(prev => prev.map(q => q.question_id === questionId ? { ...q, ...payload, options: payload.options } : q));
             cancelEdit();
         } catch {
@@ -117,7 +117,7 @@ function QuestionManagement({ examId, onClose }) {
     const deleteQuestion = async (questionId) => {
         if (!window.confirm('Delete this question?')) return;
         try {
-            await apiClient.delete(`/api/questions/${questionId}`);
+            await apiClient.delete(`/api/v1/questions/${questionId}`);
             setQuestions(prev => prev.filter(q => q.question_id !== questionId));
         } catch {
             setError('Delete failed.');

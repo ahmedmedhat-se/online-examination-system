@@ -1,4 +1,4 @@
-import { db_config } from "../../config/database.js";
+import { db_config } from "../../database/mysql.js"
 
 export const ExamAttempt = {
     create: async (attempt) => {
