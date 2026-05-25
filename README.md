@@ -133,29 +133,42 @@ database/
 ```js
 server/
 ├── apis/
-│   ├── adminRoutes.js
-│   ├── authRoutes.js
-│   ├── instructorRoutes.js
-│   └── studentRoutes.js
+│   ├── admin.routes.js
+│   ├── auth.routes.js
+│   ├── category.routes.js
+│   ├── course.routes.js
+│   ├── exam-attempt.routes.js
+│   ├── exam.routes.js
+│   ├── instructor.routes.js
+│   ├── question.routes.js
+│   └── student.routes.js
 ├── app/
 │   ├── controllers/
 │   │   ├── adminController.js
 │   │   ├── authController.js
+│   │   ├── categoryController.js
+│   │   ├── examAttemptController.js
+│   │   ├── examController.js
 │   │   ├── instructorController.js
+│   │   ├── questionController.js
 │   │   └── studentController.js
 │   ├── middlewares/
 │   │   ├── authMiddleware.js
 │   │   └── roleMiddleware.js
 │   ├── models/
 │   │   ├── Admin.js
+│   │   ├── Category.js
 │   │   ├── Course.js
+│   │   ├── Exam.js
+│   │   ├── ExamAttempt.js
 │   │   ├── Instructor.js
+│   │   ├── Question.js
 │   │   ├── Student.js
+│   │   ├── StudentAnswer.js
 │   │   └── User.js
 │   └── validations/
 │       └── authValidation.js
 ├── config/
-│   └── env.js
 ├── database/
 │   └── mysql.js
 ├── node_modules/
