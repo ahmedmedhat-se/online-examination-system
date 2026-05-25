@@ -1,4 +1,4 @@
-import { Exam } from "../models/Exam.js";
+import Exam from "../models/Exam.js";
 
 export const examController = {
     create: async (req, res) => {

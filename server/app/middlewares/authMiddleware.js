@@ -1,6 +1,6 @@
 import { verifyAccessToken } from "../../utils/jwt.js";
-import { Instructor } from "../models/Instructor.js";
-import { Admin } from "../models/Admin.js";
+import Instructor from "../models/Instructor.js";
+import Admin from "../models/Admin.js";
 
 export const authenticate = (req, res, next) => {
     try {

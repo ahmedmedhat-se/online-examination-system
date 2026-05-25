@@ -258,7 +258,7 @@ npm i -y
 
 **Step 2: Install all dependencies:**
 ```bash
-npm install express mysql2 dotenv cors helmet morgan cookie-parser bcrypt jsonwebtoken express-rate-limit
+npm install express mysql2 sequelize dotenv cors helmet morgan cookie-parser bcrypt jsonwebtoken express-rate-limit
 
 npm install -D nodemon
 ```

@@ -1,5 +1,5 @@
-import { Student } from "../models/Student.js";
-import { User } from "../models/User.js";
+import Student from "../models/Student.js";
+import User from "../models/User.js";
 
 export const studentController = {
     getProfile: async (req, res) => {

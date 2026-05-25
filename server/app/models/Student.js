@@ -1,11 +1,55 @@
-import { db_config } from "../../database/mysql.js"
+import { DataTypes } from "sequelize";
+import { sequelize } from "../../database/mysql.js";
+import User from "./User.js";
 
-export const Student = {
+const Student = sequelize.define('Student', {
+    student_id: {
+        type: DataTypes.INTEGER,
+        primaryKey: true,
+        autoIncrement: true
+    },
+    user_id: {
+        type: DataTypes.INTEGER,
+        allowNull: false,
+        references: {
+            model: 'users',
+            key: 'user_id'
+        }
+    },
+    phone: {
+        type: DataTypes.STRING,
+        allowNull: true
+    },
+    address_street: {
+        type: DataTypes.STRING,
+        allowNull: true
+    },
+    address_city: {
+        type: DataTypes.STRING,
+        allowNull: true
+    },
+    address_zip: {
+        type: DataTypes.STRING,
+        allowNull: true
+    }
+}, {
+    tableName: 'students',
+    timestamps: false
+});
+
+Student.belongsTo(User, { foreignKey: 'user_id' });
+
+export const StudentModel = {
     create: async (student) => {
         try {
-            const stmt = `INSERT INTO students (user_id, phone, address_street, address_city, address_zip) VALUES (?, ?, ?, ?, ?)`;
-            const [result] = await db_config.query(stmt, [student.user_id, student.phone || null, student.address_street || null, student.address_city || null, student.address_zip || null]);
-            return result.insertId;
+            const result = await Student.create({
+                user_id: student.user_id,
+                phone: student.phone || null,
+                address_street: student.address_street || null,
+                address_city: student.address_city || null,
+                address_zip: student.address_zip || null
+            });
+            return result.student_id;
         } catch (error) {
             throw new Error(`Failed to create student: ${error.message}`);
         }
@@ -13,9 +57,22 @@ export const Student = {
 
     readById: async (student_id) => {
         try {
-            const stmt = `SELECT s.*, u.first_name, u.last_name, u.email, u.is_active FROM students s JOIN users u ON s.user_id = u.user_id WHERE s.student_id = ?`;
-            const [rows] = await db_config.query(stmt, [student_id]);
-            return rows[0] || null;
+            const student = await Student.findByPk(student_id, {
+                include: [{
+                    model: User,
+                    attributes: ['first_name', 'last_name', 'email', 'is_active']
+                }]
+            });
+            if (!student) return null;
+            const studentJson = student.toJSON();
+            return {
+                ...studentJson,
+                first_name: studentJson.User?.first_name,
+                last_name: studentJson.User?.last_name,
+                email: studentJson.User?.email,
+                is_active: studentJson.User?.is_active,
+                User: undefined
+            };
         } catch (error) {
             throw new Error(`Failed to fetch student: ${error.message}`);
         }
@@ -23,9 +80,23 @@ export const Student = {
 
     readByUserId: async (user_id) => {
         try {
-            const stmt = `SELECT s.*, u.first_name, u.last_name, u.email, u.is_active FROM students s JOIN users u ON s.user_id = u.user_id WHERE s.user_id = ?`;
-            const [rows] = await db_config.query(stmt, [user_id]);
-            return rows[0] || null;
+            const student = await Student.findOne({
+                where: { user_id },
+                include: [{
+                    model: User,
+                    attributes: ['first_name', 'last_name', 'email', 'is_active']
+                }]
+            });
+            if (!student) return null;
+            const studentJson = student.toJSON();
+            return {
+                ...studentJson,
+                first_name: studentJson.User?.first_name,
+                last_name: studentJson.User?.last_name,
+                email: studentJson.User?.email,
+                is_active: studentJson.User?.is_active,
+                User: undefined
+            };
         } catch (error) {
             throw new Error(`Failed to fetch student by user: ${error.message}`);
         }
@@ -33,9 +104,26 @@ export const Student = {
 
     readAll: async () => {
         try {
-            const stmt = `SELECT s.*, u.first_name, u.last_name, u.email, u.is_active, u.last_login FROM students s JOIN users u ON s.user_id = u.user_id WHERE u.is_active = TRUE ORDER BY u.first_name`;
-            const [rows] = await db_config.query(stmt);
-            return rows;
+            const students = await Student.findAll({
+                include: [{
+                    model: User,
+                    where: { is_active: true },
+                    attributes: ['first_name', 'last_name', 'email', 'is_active', 'last_login']
+                }],
+                order: [[User, 'first_name', 'ASC']]
+            });
+            return students.map(s => {
+                const studentJson = s.toJSON();
+                return {
+                    ...studentJson,
+                    first_name: studentJson.User?.first_name,
+                    last_name: studentJson.User?.last_name,
+                    email: studentJson.User?.email,
+                    is_active: studentJson.User?.is_active,
+                    last_login: studentJson.User?.last_login,
+                    User: undefined
+                };
+            });
         } catch (error) {
             throw new Error(`Failed to fetch students: ${error.message}`);
         }
@@ -43,17 +131,18 @@ export const Student = {
 
     update: async (student_id, updates) => {
         try {
-            const fields = [];
-            const values = [];
-            if (updates.phone !== undefined) { fields.push("phone = ?"); values.push(updates.phone); }
-            if (updates.address_street !== undefined) { fields.push("address_street = ?"); values.push(updates.address_street); }
-            if (updates.address_city !== undefined) { fields.push("address_city = ?"); values.push(updates.address_city); }
-            if (updates.address_zip !== undefined) { fields.push("address_zip = ?"); values.push(updates.address_zip); }
-            if (fields.length === 0) throw new Error("No fields to update");
-            values.push(student_id);
-            const stmt = `UPDATE students SET ${fields.join(", ")} WHERE student_id = ?`;
-            const [result] = await db_config.query(stmt, values);
-            return result.affectedRows;
+            const updateData = {};
+            if (updates.phone !== undefined) updateData.phone = updates.phone;
+            if (updates.address_street !== undefined) updateData.address_street = updates.address_street;
+            if (updates.address_city !== undefined) updateData.address_city = updates.address_city;
+            if (updates.address_zip !== undefined) updateData.address_zip = updates.address_zip;
+            
+            if (Object.keys(updateData).length === 0) throw new Error("No fields to update");
+            
+            const [result] = await Student.update(updateData, {
+                where: { student_id }
+            });
+            return result;
         } catch (error) {
             throw new Error(`Failed to update student: ${error.message}`);
         }
@@ -61,9 +150,10 @@ export const Student = {
 
     delete: async (student_id) => {
         try {
-            const stmt = `DELETE FROM students WHERE student_id = ?`;
-            const [result] = await db_config.query(stmt, [student_id]);
-            return result.affectedRows;
+            const result = await Student.destroy({
+                where: { student_id }
+            });
+            return result;
         } catch (error) {
             throw new Error(`Failed to delete student: ${error.message}`);
         }
@@ -71,8 +161,14 @@ export const Student = {
 
     readEnrollments: async (student_id) => {
         try {
-            const stmt = `SELECT e.*, ex.title, ex.duration_minutes, ex.total_marks, ex.passing_marks, ex.start_time, ex.end_time, c.course_name FROM exam_enrollments e JOIN exams ex ON e.exam_id = ex.exam_id JOIN courses c ON ex.course_id = c.course_id WHERE e.student_id = ? ORDER BY ex.start_time DESC`;
-            const [rows] = await db_config.query(stmt, [student_id]);
+            const [rows] = await sequelize.query(`
+                SELECT e.*, ex.title, ex.duration_minutes, ex.total_marks, ex.passing_marks, ex.start_time, ex.end_time, c.course_name 
+                FROM exam_enrollments e 
+                JOIN exams ex ON e.exam_id = ex.exam_id 
+                JOIN courses c ON ex.course_id = c.course_id 
+                WHERE e.student_id = ? 
+                ORDER BY ex.start_time DESC
+            `, { replacements: [student_id] });
             return rows;
         } catch (error) {
             throw new Error(`Failed to fetch enrollments: ${error.message}`);
@@ -81,11 +177,18 @@ export const Student = {
 
     readAttempts: async (student_id) => {
         try {
-            const stmt = `SELECT ea.*, ex.title, ex.total_marks, ex.passing_marks FROM exam_attempts ea JOIN exams ex ON ea.exam_id = ex.exam_id WHERE ea.student_id = ? ORDER BY ea.start_time DESC`;
-            const [rows] = await db_config.query(stmt, [student_id]);
+            const [rows] = await sequelize.query(`
+                SELECT ea.*, ex.title, ex.total_marks, ex.passing_marks 
+                FROM exam_attempts ea 
+                JOIN exams ex ON ea.exam_id = ex.exam_id 
+                WHERE ea.student_id = ? 
+                ORDER BY ea.start_time DESC
+            `, { replacements: [student_id] });
             return rows;
         } catch (error) {
             throw new Error(`Failed to fetch attempts: ${error.message}`);
         }
     }
 };
+
+export default Student;

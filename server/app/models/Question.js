@@ -1,21 +1,69 @@
-import { db_config } from "../../database/mysql.js"
+import { DataTypes } from "sequelize";
+import { sequelize } from "../../database/mysql.js";
 
-export const Question = {
+const Question = sequelize.define('Question', {
+    question_id: {
+        type: DataTypes.INTEGER,
+        primaryKey: true,
+        autoIncrement: true
+    },
+    exam_id: {
+        type: DataTypes.INTEGER,
+        allowNull: false
+    },
+    question_text: {
+        type: DataTypes.TEXT,
+        allowNull: false
+    },
+    question_type: {
+        type: DataTypes.ENUM('multiple_choice', 'true_false', 'essay'),
+        allowNull: false
+    },
+    options: {
+        type: DataTypes.TEXT,
+        allowNull: true,
+        get() {
+            const rawValue = this.getDataValue('options');
+            if (!rawValue) return null;
+            try {
+                return JSON.parse(rawValue);
+            } catch (e) {
+                return rawValue;
+            }
+        },
+        set(value) {
+            if (value && typeof value === 'object') {
+                this.setDataValue('options', JSON.stringify(value));
+            } else {
+                this.setDataValue('options', value);
+            }
+        }
+    },
+    correct_answer: {
+        type: DataTypes.TEXT,
+        allowNull: false
+    },
+    marks: {
+        type: DataTypes.INTEGER,
+        allowNull: false
+    }
+}, {
+    tableName: 'questions',
+    timestamps: false
+});
+
+export const QuestionModel = {
     create: async (question) => {
         try {
-            const stmt = `
-                INSERT INTO questions (exam_id, question_text, question_type, options, correct_answer, marks)
-                VALUES (?, ?, ?, ?, ?, ?)
-            `;
-            const [result] = await db_config.query(stmt, [
-                question.exam_id,
-                question.question_text,
-                question.question_type,
-                question.options,
-                question.correct_answer,
-                question.marks
-            ]);
-            return result.insertId;
+            const result = await Question.create({
+                exam_id: question.exam_id,
+                question_text: question.question_text,
+                question_type: question.question_type,
+                options: question.options,
+                correct_answer: question.correct_answer,
+                marks: question.marks
+            });
+            return result.question_id;
         } catch (error) {
             console.error(`Question Creation Error: ${error}`);
             throw new Error(`Error Occurred While Creating Question: ${error}`);
@@ -24,18 +72,8 @@ export const Question = {
 
     readById: async (question_id) => {
         try {
-            const [rows] = await db_config.query(
-                "SELECT * FROM questions WHERE question_id = ?",
-                [question_id]
-            );
-            if (rows.length === 0) return null;
-            if (rows[0].options && typeof rows[0].options === 'string') {
-                try {
-                    rows[0].options = JSON.parse(rows[0].options);
-                } catch (e) {
-                }
-            }
-            return rows[0];
+            const question = await Question.findByPk(question_id);
+            return question ? question.toJSON() : null;
         } catch (error) {
             console.error(`Failed To Fetch Question: ${error}`);
             throw new Error(`Error Occurred While Fetching Question: ${error}`);
@@ -44,19 +82,11 @@ export const Question = {
 
     readByExamId: async (exam_id) => {
         try {
-            const [rows] = await db_config.query(
-                "SELECT * FROM questions WHERE exam_id = ? ORDER BY question_id ASC",
-                [exam_id]
-            );
-            rows.forEach(row => {
-                if (row.options && typeof row.options === 'string') {
-                    try {
-                        row.options = JSON.parse(row.options);
-                    } catch (e) {
-                    }
-                }
+            const questions = await Question.findAll({
+                where: { exam_id },
+                order: [['question_id', 'ASC']]
             });
-            return rows;
+            return questions.map(q => q.toJSON());
         } catch (error) {
             console.error(`Failed To Fetch Exam Questions: ${error}`);
             throw new Error(`Error Occurred While Fetching Exam Questions: ${error}`);
@@ -65,25 +95,18 @@ export const Question = {
 
     update: async (question_id, updates) => {
         try {
-            const fields = [];
-            const values = [];
+            const updateData = {};
             const allowedFields = ["question_text", "question_type", "options", "correct_answer", "marks"];
-            
             allowedFields.forEach(field => {
-                if (updates[field] !== undefined) {
-                    fields.push(`${field} = ?`);
-                    values.push(updates[field]);
-                }
+                if (updates[field] !== undefined) updateData[field] = updates[field];
             });
             
-            if (fields.length === 0) throw new Error("No fields to update");
-            values.push(question_id);
+            if (Object.keys(updateData).length === 0) throw new Error("No fields to update");
             
-            const [result] = await db_config.query(
-                `UPDATE questions SET ${fields.join(", ")} WHERE question_id = ?`,
-                values
-            );
-            return result.affectedRows;
+            const [result] = await Question.update(updateData, {
+                where: { question_id }
+            });
+            return result;
         } catch (error) {
             console.error(`Question Update Error: ${error}`);
             throw new Error(`Error Occurred While Updating Question: ${error}`);
@@ -92,11 +115,10 @@ export const Question = {
 
     delete: async (question_id) => {
         try {
-            const [result] = await db_config.query(
-                "DELETE FROM questions WHERE question_id = ?",
-                [question_id]
-            );
-            return result.affectedRows;
+            const result = await Question.destroy({
+                where: { question_id }
+            });
+            return result;
         } catch (error) {
             console.error(`Question Deletion Error: ${error}`);
             throw new Error(`Error Occurred While Deleting Question: ${error}`);
@@ -105,14 +127,15 @@ export const Question = {
 
     deleteByExamId: async (exam_id) => {
         try {
-            const [result] = await db_config.query(
-                "DELETE FROM questions WHERE exam_id = ?",
-                [exam_id]
-            );
-            return result.affectedRows;
+            const result = await Question.destroy({
+                where: { exam_id }
+            });
+            return result;
         } catch (error) {
             console.error(`Questions Deletion Error: ${error}`);
             throw new Error(`Error Occurred While Deleting Exam Questions: ${error}`);
         }
     }
 };
+
+export default Question;

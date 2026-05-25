@@ -1,11 +1,45 @@
-import { db_config } from "../../database/mysql.js"
+import { DataTypes } from "sequelize";
+import { sequelize } from "../../database/mysql.js";
+import User from "./User.js";
 
-export const Instructor = {
+const Instructor = sequelize.define('Instructor', {
+    instructor_id: {
+        type: DataTypes.INTEGER,
+        primaryKey: true,
+        autoIncrement: true
+    },
+    user_id: {
+        type: DataTypes.INTEGER,
+        allowNull: false,
+        references: {
+            model: 'users',
+            key: 'user_id'
+        }
+    },
+    department: {
+        type: DataTypes.STRING,
+        allowNull: true
+    },
+    office: {
+        type: DataTypes.STRING,
+        allowNull: true
+    }
+}, {
+    tableName: 'instructors',
+    timestamps: false
+});
+
+Instructor.belongsTo(User, { foreignKey: 'user_id' });
+
+export const InstructorModel = {
     create: async (instructor) => {
         try {
-            const stmt = `INSERT INTO instructors (user_id, department, office) VALUES (?, ?, ?)`;
-            const [result] = await db_config.query(stmt, [instructor.user_id, instructor.department || null, instructor.office || null]);
-            return result.insertId;
+            const result = await Instructor.create({
+                user_id: instructor.user_id,
+                department: instructor.department || null,
+                office: instructor.office || null
+            });
+            return result.instructor_id;
         } catch (error) {
             throw new Error(`Failed to create instructor: ${error.message}`);
         }
@@ -13,9 +47,22 @@ export const Instructor = {
 
     readById: async (instructor_id) => {
         try {
-            const stmt = `SELECT i.*, u.first_name, u.last_name, u.email, u.is_active FROM instructors i JOIN users u ON i.user_id = u.user_id WHERE i.instructor_id = ?`;
-            const [rows] = await db_config.query(stmt, [instructor_id]);
-            return rows[0] || null;
+            const instructor = await Instructor.findByPk(instructor_id, {
+                include: [{
+                    model: User,
+                    attributes: ['first_name', 'last_name', 'email', 'is_active']
+                }]
+            });
+            if (!instructor) return null;
+            const instructorJson = instructor.toJSON();
+            return {
+                ...instructorJson,
+                first_name: instructorJson.User?.first_name,
+                last_name: instructorJson.User?.last_name,
+                email: instructorJson.User?.email,
+                is_active: instructorJson.User?.is_active,
+                User: undefined
+            };
         } catch (error) {
             throw new Error(`Failed to fetch instructor: ${error.message}`);
         }
@@ -23,9 +70,23 @@ export const Instructor = {
 
     readByUserId: async (user_id) => {
         try {
-            const stmt = `SELECT i.*, u.first_name, u.last_name, u.email, u.is_active FROM instructors i JOIN users u ON i.user_id = u.user_id WHERE i.user_id = ?`;
-            const [rows] = await db_config.query(stmt, [user_id]);
-            return rows[0] || null;
+            const instructor = await Instructor.findOne({
+                where: { user_id },
+                include: [{
+                    model: User,
+                    attributes: ['first_name', 'last_name', 'email', 'is_active']
+                }]
+            });
+            if (!instructor) return null;
+            const instructorJson = instructor.toJSON();
+            return {
+                ...instructorJson,
+                first_name: instructorJson.User?.first_name,
+                last_name: instructorJson.User?.last_name,
+                email: instructorJson.User?.email,
+                is_active: instructorJson.User?.is_active,
+                User: undefined
+            };
         } catch (error) {
             throw new Error(`Failed to fetch instructor by user: ${error.message}`);
         }
@@ -33,9 +94,26 @@ export const Instructor = {
 
     readAll: async () => {
         try {
-            const stmt = `SELECT i.*, u.first_name, u.last_name, u.email, u.is_active, u.last_login FROM instructors i JOIN users u ON i.user_id = u.user_id WHERE u.is_active = TRUE ORDER BY u.first_name`;
-            const [rows] = await db_config.query(stmt);
-            return rows;
+            const instructors = await Instructor.findAll({
+                include: [{
+                    model: User,
+                    where: { is_active: true },
+                    attributes: ['first_name', 'last_name', 'email', 'is_active', 'last_login']
+                }],
+                order: [[User, 'first_name', 'ASC']]
+            });
+            return instructors.map(i => {
+                const instructorJson = i.toJSON();
+                return {
+                    ...instructorJson,
+                    first_name: instructorJson.User?.first_name,
+                    last_name: instructorJson.User?.last_name,
+                    email: instructorJson.User?.email,
+                    is_active: instructorJson.User?.is_active,
+                    last_login: instructorJson.User?.last_login,
+                    User: undefined
+                };
+            });
         } catch (error) {
             throw new Error(`Failed to fetch instructors: ${error.message}`);
         }
@@ -43,15 +121,16 @@ export const Instructor = {
 
     update: async (instructor_id, updates) => {
         try {
-            const fields = [];
-            const values = [];
-            if (updates.department !== undefined) { fields.push("department = ?"); values.push(updates.department); }
-            if (updates.office !== undefined) { fields.push("office = ?"); values.push(updates.office); }
-            if (fields.length === 0) throw new Error("No fields to update");
-            values.push(instructor_id);
-            const stmt = `UPDATE instructors SET ${fields.join(", ")} WHERE instructor_id = ?`;
-            const [result] = await db_config.query(stmt, values);
-            return result.affectedRows;
+            const updateData = {};
+            if (updates.department !== undefined) updateData.department = updates.department;
+            if (updates.office !== undefined) updateData.office = updates.office;
+            
+            if (Object.keys(updateData).length === 0) throw new Error("No fields to update");
+            
+            const [result] = await Instructor.update(updateData, {
+                where: { instructor_id }
+            });
+            return result;
         } catch (error) {
             throw new Error(`Failed to update instructor: ${error.message}`);
         }
@@ -59,9 +138,10 @@ export const Instructor = {
 
     delete: async (instructor_id) => {
         try {
-            const stmt = `DELETE FROM instructors WHERE instructor_id = ?`;
-            const [result] = await db_config.query(stmt, [instructor_id]);
-            return result.affectedRows;
+            const result = await Instructor.destroy({
+                where: { instructor_id }
+            });
+            return result;
         } catch (error) {
             throw new Error(`Failed to delete instructor: ${error.message}`);
         }
@@ -69,8 +149,11 @@ export const Instructor = {
 
     readCourses: async (instructor_id) => {
         try {
-            const stmt = `SELECT c.* FROM courses c JOIN course_instructors ci ON c.course_id = ci.course_id WHERE ci.instructor_id = ?`;
-            const [rows] = await db_config.query(stmt, [instructor_id]);
+            const [rows] = await sequelize.query(`
+                SELECT c.* FROM courses c 
+                JOIN course_instructors ci ON c.course_id = ci.course_id 
+                WHERE ci.instructor_id = ?
+            `, { replacements: [instructor_id] });
             return rows;
         } catch (error) {
             throw new Error(`Failed to fetch instructor courses: ${error.message}`);
@@ -79,11 +162,19 @@ export const Instructor = {
 
     readExams: async (instructor_id) => {
         try {
-            const stmt = `SELECT e.*, c.course_name, cat.category_name FROM exams e JOIN courses c ON e.course_id = c.course_id LEFT JOIN categories cat ON e.category_id = cat.category_id WHERE e.instructor_id = ? ORDER BY e.created_at DESC`;
-            const [rows] = await db_config.query(stmt, [instructor_id]);
+            const [rows] = await sequelize.query(`
+                SELECT e.*, c.course_name, cat.category_name 
+                FROM exams e 
+                JOIN courses c ON e.course_id = c.course_id 
+                LEFT JOIN categories cat ON e.category_id = cat.category_id 
+                WHERE e.instructor_id = ? 
+                ORDER BY e.created_at DESC
+            `, { replacements: [instructor_id] });
             return rows;
         } catch (error) {
             throw new Error(`Failed to fetch instructor exams: ${error.message}`);
         }
     }
 };
+
+export default Instructor;

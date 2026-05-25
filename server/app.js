@@ -6,6 +6,7 @@ import morgan from "morgan";
 import cookieParser from "cookie-parser";
 import cors from "cors";
 import rateLimit from "express-rate-limit";
+import { sequelize } from "./database/mysql.js";
 
 // Importing API Routers
 import { authRouter } from "./apis/auth.routes.js";
@@ -115,11 +116,23 @@ app.use((err, req, res, next) => {
 });
 
 // Application Initialization
-app.listen(PORT, () => {
-  console.log(`
+const startServer = async () => {
+  try {
+    await sequelize.authenticate();
+    console.log('Sequelize connection established successfully.');
+
+    app.listen(PORT, () => {
+      console.log(`
 - Server is running on: http://localhost:${PORT}
 - Environment: ${process.env.NODE_ENV || "development"}
 - Started: ${new Date().toLocaleString()}
 - Frontend: ${process.env.FRONTEND_URL || "http://localhost:5000"}
 `);
-});
+    });
+  } catch (error) {
+    console.error('Unable to connect to the database:', error);
+    process.exit(1);
+  }
+};
+
+startServer();

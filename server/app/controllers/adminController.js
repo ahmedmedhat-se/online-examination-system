@@ -1,7 +1,7 @@
-import { Admin } from "../models/Admin.js";
-import { User } from "../models/User.js";
-import { Student } from "../models/Student.js";
-import { Instructor } from "../models/Instructor.js";
+import Admin from "../models/Admin.js";
+import User from "../models/User.js";
+import Student from "../models/Student.js";
+import Instructor from "../models/Instructor.js";
 
 export const adminController = {
     getProfile: async (req, res) => {

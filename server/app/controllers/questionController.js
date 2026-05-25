@@ -1,4 +1,4 @@
-import { Question } from "../models/Question.js";
+import Question from "../models/Question.js";
 
 export const questionController = {
     create: async (req, res) => {

@@ -1,7 +1,7 @@
-import { Instructor } from "../models/Instructor.js";
-import { User } from "../models/User.js";
-import { Exam } from "../models/Exam.js";
-import { Question } from "../models/Question.js";
+import Instructor from "../models/Instructor.js";
+import User from "../models/User.js";
+import Exam from "../models/Exam.js";
+import Question from "../models/Question.js";
 
 export const instructorController = {
     getProfile: async (req, res) => {

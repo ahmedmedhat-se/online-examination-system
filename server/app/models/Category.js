@@ -1,13 +1,34 @@
-import { db_config } from "../../database/mysql.js";
+import { DataTypes } from "sequelize";
+import { sequelize } from "../../database/mysql.js";
 
-export const Category = {
+const Category = sequelize.define('Category', {
+    category_id: {
+        type: DataTypes.INTEGER,
+        primaryKey: true,
+        autoIncrement: true
+    },
+    category_name: {
+        type: DataTypes.STRING,
+        allowNull: false,
+        unique: true
+    },
+    description: {
+        type: DataTypes.TEXT,
+        allowNull: true
+    }
+}, {
+    tableName: 'categories',
+    timestamps: false
+});
+
+export const CategoryModel = {
     create: async (category) => {
         try {
-            const [result] = await db_config.query(
-                "INSERT INTO categories (category_name, description) VALUES (?, ?)",
-                [category.category_name, category.description || null]
-            );
-            return result.insertId;
+            const result = await Category.create({
+                category_name: category.category_name,
+                description: category.description || null
+            });
+            return result.category_id;
         } catch (error) {
             console.error(`Category Creation Error: ${error}`);
             throw new Error(`Error Occurred While Creating Category: ${error}`);
@@ -16,8 +37,10 @@ export const Category = {
 
     readAll: async () => {
         try {
-            const [categories] = await db_config.query("SELECT * FROM categories ORDER BY category_name ASC");
-            return categories;
+            const categories = await Category.findAll({
+                order: [['category_name', 'ASC']]
+            });
+            return categories.map(c => c.toJSON());
         } catch (error) {
             console.error(`Failed To Fetch Categories: ${error}`);
             throw new Error(`Error Occurred While Fetching Categories: ${error}`);
@@ -26,8 +49,8 @@ export const Category = {
 
     readById: async (category_id) => {
         try {
-            const [category] = await db_config.query("SELECT * FROM categories WHERE category_id = ?", [category_id]);
-            return category[0] || null;
+            const category = await Category.findByPk(category_id);
+            return category ? category.toJSON() : null;
         } catch (error) {
             console.error(`Failed To Fetch Category: ${error}`);
             throw new Error(`Error Occurred While Fetching Category: ${error}`);
@@ -36,14 +59,16 @@ export const Category = {
 
     update: async (category_id, updates) => {
         try {
-            const fields = [];
-            const values = [];
-            if (updates.category_name !== undefined) { fields.push("category_name = ?"); values.push(updates.category_name); }
-            if (updates.description !== undefined) { fields.push("description = ?"); values.push(updates.description); }
-            if (fields.length === 0) throw new Error("No fields to update");
-            values.push(category_id);
-            const [result] = await db_config.query(`UPDATE categories SET ${fields.join(", ")} WHERE category_id = ?`, values);
-            return result.affectedRows;
+            const updateData = {};
+            if (updates.category_name !== undefined) updateData.category_name = updates.category_name;
+            if (updates.description !== undefined) updateData.description = updates.description;
+            
+            if (Object.keys(updateData).length === 0) throw new Error("No fields to update");
+            
+            const [result] = await Category.update(updateData, {
+                where: { category_id }
+            });
+            return result;
         } catch (error) {
             console.error(`Category Update Error: ${error}`);
             throw new Error(`Error Occurred While Updating Category: ${error}`);
@@ -52,11 +77,15 @@ export const Category = {
 
     delete: async (category_id) => {
         try {
-            const [result] = await db_config.query("DELETE FROM categories WHERE category_id = ?", [category_id]);
-            return result.affectedRows;
+            const result = await Category.destroy({
+                where: { category_id }
+            });
+            return result;
         } catch (error) {
             console.error(`Category Deletion Error: ${error}`);
             throw new Error(`Error Occurred While Deleting Category: ${error}`);
         }
-    },
+    }
 };
+
+export default Category;

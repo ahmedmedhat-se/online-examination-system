@@ -1,8 +1,8 @@
 import bcrypt from "bcrypt";
-import { User } from "../models/User.js";
-import { Student } from "../models/Student.js";
-import { Instructor } from "../models/Instructor.js";
-import { Admin } from "../models/Admin.js";
+import User from "../models/User.js";
+import Student from "../models/Student.js";
+import Instructor from "../models/Instructor.js";
+import Admin from "../models/Admin.js";
 import { generateTokens } from "../../utils/jwt.js";
 import { setAuthCookies } from "../../utils/cookieHelper.js";
 

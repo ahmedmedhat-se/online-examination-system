@@ -1,5 +1,5 @@
-import { ExamAttempt } from "../models/ExamAttempt.js";
-import { StudentAnswer } from "../models/StudentAnswer.js";
+import ExamAttempt from "../models/ExamAttempt.js";
+import StudentAnswer from "../models/StudentAnswer.js";
 
 export const examAttemptController = {
     startExam: async (req, res) => {
