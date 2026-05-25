@@ -10,6 +10,7 @@ import { sequelize } from "./database/mysql.js";
 
 // Importing API Routers
 import { authRouter } from "./apis/auth.routes.js";
+import { userRouter } from "./apis/user.routes.js";
 import { studentRouter } from "./apis/student.routes.js";
 import { instructorRouter } from "./apis/instructor.routes.js";
 import { adminRouter } from "./apis/admin.routes.js";
@@ -86,6 +87,7 @@ const generalLimiter = createLimiter(
 
 // APIs
 app.use("/api/v1/auth", authLimiter, authRouter);
+app.use("/api/v1/user", generalLimiter, userRouter);
 app.use("/api/v1/student", generalLimiter, studentRouter);
 app.use("/api/v1/instructor", generalLimiter, instructorRouter);
 app.use("/api/v1/admin", generalLimiter, adminRouter);

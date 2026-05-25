@@ -37,13 +37,29 @@ export const courseController = {
 
     update: async (req, res) => {
         try {
-            const affected = await CourseModel.update(req.params.id, req.body);
-            if (!affected) return res.status(404).json({ success: false, message: "Course not found" });
-            const course = await CourseModel.readById(req.params.id);
+            console.log("1. Update received for ID:", req.params.id);
+            console.log("2. Update data:", req.body);
+            
+            const courseId = parseInt(req.params.id);
+            console.log("3. Parsed ID:", courseId);
+            
+            const affected = await CourseModel.update(courseId, req.body);
+            console.log("4. Affected rows:", affected);
+            
+            if (affected === 0) {
+                console.log("5. No rows updated");
+                return res.status(404).json({ success: false, message: "Course not found" });
+            }
+            
+            const course = await CourseModel.readById(courseId);
+            console.log("6. Updated course:", course);
+            
+            console.log("7. Sending success response");
             return res.status(200).json({ success: true, message: "Course updated", data: { course } });
         } catch (error) {
-            console.error(`Update course error: ${error.message}`);
-            return res.status(500).json({ success: false, message: "Internal server error" });
+            console.error("UPDATE ERROR:", error);
+            console.error("ERROR STACK:", error.stack);
+            return res.status(500).json({ success: false, message: error.message });
         }
     },
 

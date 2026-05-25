@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faTrash, faSpinner, faPlus, faSearch, faHashtag, faAlignLeft, faClock, faBookOpen } from '@fortawesome/free-solid-svg-icons';
+import { faTrash, faSpinner, faPlus, faSearch, faHashtag, faAlignLeft, faClock, faBookOpen, faEdit, faSave, faTimes, faUserPlus, faUserMinus, faChalkboardTeacher } from '@fortawesome/free-solid-svg-icons';
 import apiClient from '../../../config/axios.js';
 import adminStyles from '../../styles/AdminDashboard.module.css';
 
@@ -17,6 +17,13 @@ function CourseManagement() {
     const [showForm, setShowForm] = useState(false);
     const [form, setForm] = useState({ ...INITIAL_FORM });
     const [submitting, setSubmitting] = useState(false);
+    const [editingId, setEditingId] = useState(null);
+    const [editingData, setEditingData] = useState(null);
+    const [showInstructorModal, setShowInstructorModal] = useState(false);
+    const [selectedCourse, setSelectedCourse] = useState(null);
+    const [courseInstructors, setCourseInstructors] = useState([]);
+    const [assigningInstructor, setAssigningInstructor] = useState(false);
+    const [allInstructors, setAllInstructors] = useState([]);
     const abortRef = useRef(null);
 
     const fetchCourses = useCallback(async () => {
@@ -34,10 +41,34 @@ function CourseManagement() {
         }
     }, []);
 
+    const fetchInstructors = useCallback(async () => {
+        try {
+            const res = await apiClient.get('/api/v1/instructor');
+            if (res.data.success) {
+                setAllInstructors(res.data.data.instructors);
+            }
+        } catch (err) {
+            console.error('Failed to fetch instructors');
+            setAllInstructors([]);
+        }
+    }, []);
+
     useEffect(() => {
         fetchCourses();
+        fetchInstructors();
         return () => { if (abortRef.current) abortRef.current.abort(); };
-    }, [fetchCourses]);
+    }, [fetchCourses, fetchInstructors]);
+
+    const fetchCourseInstructors = async (courseId) => {
+        try {
+            const res = await apiClient.get(`/api/v1/courses/${courseId}`);
+            if (res.data.success) {
+                setCourseInstructors(res.data.data.instructors || []);
+            }
+        } catch (err) {
+            setError('Failed to load course instructors');
+        }
+    };
 
     const filteredCourses = useMemo(() => {
         if (!search) return courses;
@@ -73,6 +104,29 @@ function CourseManagement() {
         }
     };
 
+    const handleUpdate = async (courseId) => {
+        if (!editingData.course_code.trim() || !editingData.course_name.trim()) return;
+        setSubmitting(true);
+        try {
+            const payload = {
+                course_code: editingData.course_code.trim().toUpperCase().slice(0, 20),
+                course_name: editingData.course_name.trim().slice(0, 100),
+                description: editingData.description?.trim().slice(0, 500) || null,
+                credit_hours: Math.max(1, Math.min(6, parseInt(editingData.credit_hours) || 3)),
+            };
+            const res = await apiClient.put(`/api/v1/courses/${courseId}`, payload);
+            if (res.data.success) {
+                setCourses(prev => prev.map(c => c.course_id === courseId ? res.data.data.course : c));
+                setEditingId(null);
+                setEditingData(null);
+            }
+        } catch (err) {
+            setError(err.response?.data?.message || 'Failed to update course.');
+        } finally {
+            setSubmitting(false);
+        }
+    };
+
     const deleteCourse = async (courseId) => {
         if (!window.confirm('Delete this course? All associated exams will also be deleted.')) return;
         try {
@@ -82,6 +136,40 @@ function CourseManagement() {
             setError('Delete failed.');
         }
     };
+
+    const openInstructorModal = async (course) => {
+        setSelectedCourse(course);
+        await fetchCourseInstructors(course.course_id);
+        setShowInstructorModal(true);
+    };
+
+    const assignInstructor = async (instructorId) => {
+        setAssigningInstructor(true);
+        try {
+            await apiClient.post(`/api/v1/courses/${selectedCourse.course_id}/instructors`, { instructor_id: instructorId });
+            await fetchCourseInstructors(selectedCourse.course_id);
+            await fetchInstructors();
+        } catch (err) {
+            setError('Failed to assign instructor');
+        } finally {
+            setAssigningInstructor(false);
+        }
+    };
+
+    const removeInstructor = async (instructorId) => {
+        if (!window.confirm('Remove this instructor from the course?')) return;
+        try {
+            await apiClient.delete(`/api/v1/courses/${selectedCourse.course_id}/instructors`, { data: { instructor_id: instructorId } });
+            await fetchCourseInstructors(selectedCourse.course_id);
+            await fetchInstructors();
+        } catch (err) {
+            setError('Failed to remove instructor');
+        }
+    };
+
+    const availableInstructors = allInstructors.filter(inst =>
+        !courseInstructors.some(ci => ci.instructor_id === inst.instructor_id)
+    );
 
     if (loading) {
         return <div className={adminStyles.centerState}><FontAwesomeIcon icon={faSpinner} spin className={adminStyles.loadingIcon} /><span>Loading courses...</span></div>;
@@ -172,26 +260,55 @@ function CourseManagement() {
                             <th>Code</th>
                             <th>Name</th>
                             <th>Credits</th>
+                            <th>Instructors</th>
                             <th>Actions</th>
                         </tr>
                     </thead>
                     <tbody>
                         {paginatedCourses.map(c => (
                             <tr key={c.course_id}>
-                                <td><span className={adminStyles.badge}>{c.course_code}</span></td>
-                                <td>
-                                    <div style={{ fontWeight: 600 }}>{c.course_name}</div>
-                                    {c.description && <div style={{ fontSize: 12, color: '#94a3b8', marginTop: 2 }}>{c.description.slice(0, 80)}{c.description.length > 80 ? '...' : ''}</div>}
-                                </td>
-                                <td>{c.credit_hours}</td>
-                                <td>
-                                    <button className={`${adminStyles.actionBtn} ${adminStyles.actionDelete}`} onClick={() => deleteCourse(c.course_id)} title="Delete">
-                                        <FontAwesomeIcon icon={faTrash} />
-                                    </button>
-                                </td>
+                                {editingId === c.course_id ? (
+                                    <>
+                                        <td><input className={adminStyles.editInput} value={editingData.course_code} onChange={e => setEditingData({ ...editingData, course_code: e.target.value })} maxLength={20} /></td>
+                                        <td><input className={adminStyles.editInput} value={editingData.course_name} onChange={e => setEditingData({ ...editingData, course_name: e.target.value })} maxLength={100} /></td>
+                                        <td><input type="number" className={adminStyles.editInput} value={editingData.credit_hours} onChange={e => setEditingData({ ...editingData, credit_hours: parseInt(e.target.value) || 3 })} min="1" max="6" style={{ width: '80px' }} /></td>
+                                        <td colSpan="2">
+                                            <div style={{ display: 'flex', gap: '8px' }}>
+                                                <button className={adminStyles.submitBtn} onClick={() => handleUpdate(c.course_id)} disabled={submitting} style={{ padding: '6px 12px' }}>
+                                                    <FontAwesomeIcon icon={faSave} /> Save
+                                                </button>
+                                                <button className={adminStyles.addBtn} onClick={() => { setEditingId(null); setEditingData(null); }} style={{ background: '#e2e8f0', color: '#475569', padding: '6px 12px' }}>
+                                                    <FontAwesomeIcon icon={faTimes} /> Cancel
+                                                </button>
+                                            </div>
+                                        </td>
+                                    </>
+                                ) : (
+                                    <>
+                                        <td><span className={adminStyles.badge}>{c.course_code}</span></td>
+                                        <td>
+                                            <div style={{ fontWeight: 600 }}>{c.course_name}</div>
+                                            {c.description && <div style={{ fontSize: 12, color: '#94a3b8', marginTop: 2 }}>{c.description.slice(0, 80)}{c.description.length > 80 ? '...' : ''}</div>}
+                                        </td>
+                                        <td>{c.credit_hours}</td>
+                                        <td>
+                                            <button className={adminStyles.actionBtn} onClick={() => openInstructorModal(c)} title="Manage Instructors" style={{ width: 'auto', padding: '0 12px' }}>
+                                                <FontAwesomeIcon icon={faChalkboardTeacher} /> Manage
+                                            </button>
+                                        </td>
+                                        <td className={adminStyles.actions}>
+                                            <button className={adminStyles.actionBtn} onClick={() => { setEditingId(c.course_id); setEditingData({ course_code: c.course_code, course_name: c.course_name, description: c.description || '', credit_hours: c.credit_hours }); }} title="Edit">
+                                                <FontAwesomeIcon icon={faEdit} />
+                                            </button>
+                                            <button className={`${adminStyles.actionBtn} ${adminStyles.actionDelete}`} onClick={() => deleteCourse(c.course_id)} title="Delete">
+                                                <FontAwesomeIcon icon={faTrash} />
+                                            </button>
+                                        </td>
+                                    </>
+                                )}
                             </tr>
                         ))}
-                        {paginatedCourses.length === 0 && <tr><td colSpan={4} className={adminStyles.emptyRow}>No courses found.</td></tr>}
+                        {paginatedCourses.length === 0 && <tr><td colSpan={5} className={adminStyles.emptyRow}>No courses found.</td></tr>}
                     </tbody>
                 </table>
             </div>
@@ -200,6 +317,62 @@ function CourseManagement() {
                     <button onClick={() => setPage(p => Math.max(0, p - 1))} disabled={page === 0} className={adminStyles.pageBtn}>Previous</button>
                     <span className={adminStyles.pageInfo}>Page {page + 1} of {totalPages}</span>
                     <button onClick={() => setPage(p => Math.min(totalPages - 1, p + 1))} disabled={page >= totalPages - 1} className={adminStyles.pageBtn}>Next</button>
+                </div>
+            )}
+
+            {showInstructorModal && selectedCourse && (
+                <div className={adminStyles.modalOverlay} onClick={() => setShowInstructorModal(false)}>
+                    <div className={adminStyles.modal} onClick={e => e.stopPropagation()}>
+                        <div className={adminStyles.modalHeader}>
+                            <h3><FontAwesomeIcon icon={faChalkboardTeacher} /> Manage Instructors - {selectedCourse.course_name}</h3>
+                            <button className={adminStyles.closeBtn} onClick={() => setShowInstructorModal(false)}>&times;</button>
+                        </div>
+                        <div className={adminStyles.modalBody}>
+                            <div className={adminStyles.section}>
+                                <h4>Current Instructors</h4>
+                                {courseInstructors.length === 0 ? (
+                                    <p>No instructors assigned</p>
+                                ) : (
+                                    <ul className={adminStyles.instructorList}>
+                                        {courseInstructors.map(inst => (
+                                            <li key={inst.instructor_id}>
+                                                <span><strong>{inst.first_name} {inst.last_name}</strong> ({inst.email})</span>
+                                                <button onClick={() => removeInstructor(inst.instructor_id)} className={adminStyles.removeBtn}>
+                                                    <FontAwesomeIcon icon={faUserMinus} /> Remove
+                                                </button>
+                                            </li>
+                                        ))}
+                                    </ul>
+                                )}
+                            </div>
+                            <div className={adminStyles.section}>
+                                <h4>Assign New Instructor</h4>
+                                {availableInstructors.length === 0 ? (
+                                    <p>No available instructors</p>
+                                ) : (
+                                    <div className={adminStyles.assignForm}>
+                                        <select className={adminStyles.editSelect} id="instructorSelect">
+                                            <option value="">Select instructor</option>
+                                            {availableInstructors.map(inst => (
+                                                <option key={inst.instructor_id} value={inst.instructor_id}>
+                                                    {inst.first_name} {inst.last_name} ({inst.email})
+                                                </option>
+                                            ))}
+                                        </select>
+                                        <button onClick={() => {
+                                            const select = document.getElementById('instructorSelect');
+                                            if (select.value) {
+                                                assignInstructor(parseInt(select.value));
+                                                select.value = '';
+                                            }
+                                        }} className={adminStyles.submitBtn} disabled={assigningInstructor}>
+                                            <FontAwesomeIcon icon={faUserPlus} /> Assign
+                                        </button>
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+                    </div>
                 </div>
             )}
         </div>

@@ -74,13 +74,14 @@ export const CourseModel = {
             if (updates.course_name !== undefined) updateData.course_name = updates.course_name;
             if (updates.description !== undefined) updateData.description = updates.description;
             if (updates.credit_hours !== undefined) updateData.credit_hours = updates.credit_hours;
-            
+
             if (Object.keys(updateData).length === 0) throw new Error("No fields to update");
-            
-            const [result] = await Course.update(updateData, {
+
+            const [affectedRows] = await Course.update(updateData, {
                 where: { course_id }
             });
-            return result;
+
+            return affectedRows;
         } catch (error) {
             console.error(`Course Update Error: ${error}`);
             throw new Error(`Error Occurred While Updating Course: ${error}`);

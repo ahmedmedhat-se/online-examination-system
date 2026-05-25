@@ -5,6 +5,7 @@ import { instructorController } from "../app/controllers/instructorController.js
 
 const router = Router();
 
+router.get("/", authenticate, authorize("admin"), instructorController.getAll);
 router.get("/profile", authenticate, authorize("instructor"), instructorController.getProfile);
 router.put("/profile", authenticate, authorize("instructor"), instructorController.updateProfile);
 router.get("/courses", authenticate, authorize("instructor"), instructorController.getCourses);

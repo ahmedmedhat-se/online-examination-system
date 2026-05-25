@@ -4,6 +4,22 @@ import { ExamModel } from "../models/Exam.js";
 import { QuestionModel } from "../models/Question.js";
 
 export const instructorController = {
+    getAll: async (req, res) => {
+        try {
+            const instructors = await InstructorModel.readAll();
+            return res.status(200).json({
+                success: true,
+                data: { instructors }
+            });
+        } catch (error) {
+            console.error(`Get instructors error: ${error.message}`);
+            return res.status(500).json({
+                success: false,
+                message: "Internal server error"
+            });
+        }
+    },
+    
     getProfile: async (req, res) => {
         try {
             const instructor = await InstructorModel.readByUserId(req.user.user_id);
