@@ -277,7 +277,7 @@ npm install -D nodemon
 # API Documentation
 ## Base URL
 ```bash
-http://localhost:PORT/api/auth
+http://localhost:PORT/api/v1/
 ```
 
 ## Authentication API
